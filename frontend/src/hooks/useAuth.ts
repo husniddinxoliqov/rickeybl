@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
 import { apiClient, authStorage, ApiError } from '../api/client';
+import { getRequestLanguage, translateAppMessage } from '../i18n/config';
 import { AuthResponse, StudentStatus, User } from '../types';
 
 interface UseAuthState {
@@ -29,7 +30,9 @@ export function useAuth(): UseAuthState {
   const authenticateWithTelegram = useCallback(async () => {
     const initData = WebApp.initData || window.Telegram?.WebApp?.initData || '';
     if (!initData) {
-      throw new Error('Telegram initData is unavailable. Open the mini-app inside Telegram.');
+      throw new Error(
+        translateAppMessage(getRequestLanguage(), 'auth.telegramUnavailable'),
+      );
     }
 
     const response = await apiClient.post<AuthResponse>('/api/auth/telegram', { initData });
@@ -65,7 +68,7 @@ export function useAuth(): UseAuthState {
         if (cause instanceof ApiError || cause instanceof Error) {
           setError(cause.message);
         } else {
-          setError('Unable to authenticate right now.');
+          setError(translateAppMessage(getRequestLanguage(), 'auth.unavailable'));
         }
       } finally {
         setIsLoading(false);

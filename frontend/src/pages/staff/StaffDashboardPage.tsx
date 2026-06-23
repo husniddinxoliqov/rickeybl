@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../api/client';
+import { useI18n } from '../../i18n';
 import { ShopOrder, StudentProfile } from '../../types';
 
 export default function StaffDashboardPage() {
+  const { t } = useI18n();
   const [pendingProfiles, setPendingProfiles] = useState<StudentProfile[]>([]);
   const [pendingOrders, setPendingOrders] = useState<ShopOrder[]>([]);
 
@@ -20,9 +22,9 @@ export default function StaffDashboardPage() {
 
   return (
     <section>
-      <h1>Staff Dashboard</h1>
-      <p>Pending approvals: {pendingProfiles.length}</p>
-      <p>Pending orders: {pendingOrders.length}</p>
+      <h1>{t('staff.dashboard.title')}</h1>
+      <p>{t('staff.dashboard.pendingApprovals', { count: pendingProfiles.length })}</p>
+      <p>{t('staff.dashboard.pendingOrders', { count: pendingOrders.length })}</p>
     </section>
   );
 }

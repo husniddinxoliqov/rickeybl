@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { TestModeBanner } from './components/TestModeBanner';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
@@ -22,7 +23,12 @@ function AppShell({ role, children }: { role: 'STUDENT' | 'STAFF' | 'ROOT'; chil
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', color: '#111827' }}>
       <TestModeBanner />
-      <main style={{ padding: '88px 16px 96px' }}>{children}</main>
+      <main style={{ padding: '88px 16px 96px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <LanguageSwitcher />
+        </div>
+        {children}
+      </main>
       <BottomNav role={role} />
     </div>
   );

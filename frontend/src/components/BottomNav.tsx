@@ -1,30 +1,33 @@
 import { NavLink } from 'react-router-dom';
 import { UserRole } from '../types';
+import { useI18n } from '../i18n';
 
 interface BottomNavProps {
   role: UserRole;
 }
 
-const navItems: Record<UserRole, Array<{ to: string; label: string }>> = {
+const navItems: Record<UserRole, Array<{ to: string; labelKey: string }>> = {
   STUDENT: [
-    { to: '/', label: 'Home' },
-    { to: '/events', label: 'Events' },
-    { to: '/shop', label: 'Shop' },
-    { to: '/notifications', label: 'Alerts' },
+    { to: '/', labelKey: 'nav.student.home' },
+    { to: '/events', labelKey: 'nav.student.events' },
+    { to: '/shop', labelKey: 'nav.student.shop' },
+    { to: '/notifications', labelKey: 'nav.student.alerts' },
   ],
   STAFF: [
-    { to: '/staff', label: 'Overview' },
-    { to: '/staff/approvals', label: 'Approvals' },
-    { to: '/staff/orders', label: 'Orders' },
+    { to: '/staff', labelKey: 'nav.staff.overview' },
+    { to: '/staff/approvals', labelKey: 'nav.staff.approvals' },
+    { to: '/staff/orders', labelKey: 'nav.staff.orders' },
   ],
   ROOT: [
-    { to: '/admin', label: 'Overview' },
-    { to: '/admin/users', label: 'Users' },
-    { to: '/admin/audit', label: 'Audit' },
+    { to: '/admin', labelKey: 'nav.root.overview' },
+    { to: '/admin/users', labelKey: 'nav.root.users' },
+    { to: '/admin/audit', labelKey: 'nav.root.audit' },
   ],
 };
 
 export function BottomNav({ role }: BottomNavProps) {
+  const { t } = useI18n();
+
   return (
     <nav
       style={{
@@ -49,7 +52,7 @@ export function BottomNav({ role }: BottomNavProps) {
             fontWeight: isActive ? 700 : 500,
           })}
         >
-          {item.label}
+          {t(item.labelKey)}
         </NavLink>
       ))}
     </nav>
