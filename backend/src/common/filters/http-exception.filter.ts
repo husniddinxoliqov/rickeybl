@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuditService } from '../../audit/audit.service';
+import { resolveLocale, translateBackendMessage } from '../i18n/localization';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -46,6 +47,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof Error ? exception.stack : undefined,
     );
 
+    const locale = resolveLocale(request.headers['accept-language']);
+    const localizedMessage = translateBackendMessage(message, locale);
+
     await this.auditService
       .log(
         request.user?.id,
@@ -55,7 +59,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         null,
         {
           statusCode: status,
-          message,
+          message: localizedMessage,
           error,
         },
         request.ip,
@@ -64,7 +68,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     response.status(status).json({
       statusCode: status,
-      message,
+      message: localizedMessage,
       error,
     });
   }

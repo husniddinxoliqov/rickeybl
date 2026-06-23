@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../api/client';
+import { useI18n } from '../../i18n';
 import { Notification, UserBadge } from '../../types';
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [balance, setBalance] = useState<number>(0);
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -24,25 +26,33 @@ export default function DashboardPage() {
 
   return (
     <section>
-      <h1>Student Dashboard</h1>
+      <h1>{t('student.dashboard.title')}</h1>
       <div style={{ padding: 16, borderRadius: 12, background: '#ecfeff', marginTop: 16 }}>
-        <strong>{balance}</strong> coins available
+        {t('student.dashboard.balance', { count: balance })}
       </div>
       <div style={{ marginTop: 24 }}>
-        <h2>Recent badges</h2>
-        <ul>
-          {badges.map((badge) => (
-            <li key={badge.id}>{badge.badge.name}</li>
-          ))}
-        </ul>
+        <h2>{t('student.dashboard.badges')}</h2>
+        {badges.length ? (
+          <ul>
+            {badges.map((badge) => (
+              <li key={badge.id}>{badge.badge.name}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>{t('student.dashboard.emptyBadges')}</p>
+        )}
       </div>
       <div style={{ marginTop: 24 }}>
-        <h2>Latest notifications</h2>
-        <ul>
-          {notifications.map((notification) => (
-            <li key={notification.id}>{notification.title}</li>
-          ))}
-        </ul>
+        <h2>{t('student.dashboard.notifications')}</h2>
+        {notifications.length ? (
+          <ul>
+            {notifications.map((notification) => (
+              <li key={notification.id}>{notification.title}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>{t('student.dashboard.emptyNotifications')}</p>
+        )}
       </div>
     </section>
   );

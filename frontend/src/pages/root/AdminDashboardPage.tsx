@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../api/client';
+import { useI18n } from '../../i18n';
 import { AdminStats } from '../../types';
 
 export default function AdminDashboardPage() {
+  const { t } = useI18n();
   const [stats, setStats] = useState<AdminStats | null>(null);
 
   useEffect(() => {
@@ -11,12 +13,12 @@ export default function AdminDashboardPage() {
 
   return (
     <section>
-      <h1>Admin Dashboard</h1>
+      <h1>{t('admin.dashboard.title')}</h1>
       <ul style={{ marginTop: 16 }}>
-        <li>Total users: {stats?.users ?? 0}</li>
-        <li>Students pending: {stats?.studentsPending ?? 0}</li>
-        <li>Active orders: {stats?.activeOrders ?? 0}</li>
-        <li>Coins awarded: {stats?.coinsAwarded ?? 0}</li>
+        <li>{t('admin.dashboard.totalUsers', { count: stats?.users ?? 0 })}</li>
+        <li>{t('admin.dashboard.studentsPending', { count: stats?.studentsPending ?? 0 })}</li>
+        <li>{t('admin.dashboard.activeOrders', { count: stats?.activeOrders ?? 0 })}</li>
+        <li>{t('admin.dashboard.coinsAwarded', { count: stats?.coinsAwarded ?? 0 })}</li>
       </ul>
     </section>
   );

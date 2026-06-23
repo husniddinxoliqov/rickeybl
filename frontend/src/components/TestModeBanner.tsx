@@ -1,4 +1,8 @@
+import { useI18n } from '../i18n';
+
 export function TestModeBanner() {
+  const { t } = useI18n();
+
   if (import.meta.env.VITE_TEST_MODE !== 'true') {
     return null;
   }
@@ -19,7 +23,7 @@ export function TestModeBanner() {
         letterSpacing: '0.08em',
       }}
     >
-      TEST MODE
+      {t('banner.testMode')}
     </div>
   );
 }

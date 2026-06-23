@@ -15,14 +15,17 @@ export class AuditService {
     newValue: Prisma.InputJsonValue | null = null,
     ipAddress?: string | null,
   ) {
+    const toNullableJson = (value: Prisma.InputJsonValue | null) =>
+      value === null ? Prisma.JsonNull : value;
+
     return this.prisma.auditLog.create({
       data: {
         actorId: actorId ?? null,
         action,
         entity,
         entityId: entityId ?? null,
-        oldValue,
-        newValue,
+        oldValue: toNullableJson(oldValue),
+        newValue: toNullableJson(newValue),
         ipAddress: ipAddress ?? null,
       },
     });

@@ -1,18 +1,24 @@
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { useI18n } from '../i18n';
+
 interface PendingApprovalPageProps {
   hasProfile: boolean;
 }
 
 export default function PendingApprovalPage({ hasProfile }: PendingApprovalPageProps) {
+  const { t } = useI18n();
+
   return (
     <main style={{ padding: '96px 24px 24px' }}>
-      <h1 style={{ marginBottom: 16 }}>Approval required</h1>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+        <LanguageSwitcher />
+      </div>
+      <h1 style={{ marginBottom: 16 }}>{t('pending.title')}</h1>
       <p style={{ color: '#374151' }}>
-        {hasProfile
-          ? 'Your student profile is waiting for SamDU staff approval.'
-          : 'Your account is authenticated, but a student profile has not been created yet.'}
+        {hasProfile ? t('pending.withProfile') : t('pending.withoutProfile')}
       </p>
       <p style={{ color: '#6b7280', marginTop: 12 }}>
-        Contact staff or complete profile setup through the backend API before continuing.
+        {t('pending.help')}
       </p>
     </main>
   );

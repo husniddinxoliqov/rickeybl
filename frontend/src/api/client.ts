@@ -1,3 +1,5 @@
+import { getRequestLanguage, translateAppMessage } from '../i18n/config';
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 const TOKEN_STORAGE_KEY = 'samdu_access_token';
 
@@ -20,6 +22,7 @@ const buildHeaders = (headers?: HeadersInit) => {
   const token = localStorage.getItem(TOKEN_STORAGE_KEY);
   return {
     'Content-Type': 'application/json',
+    'Accept-Language': getRequestLanguage(),
     ...(token ? { Authorization: 'Bearer ' + token } : {}),
     ...(headers ?? {}),
   };
@@ -42,7 +45,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       ? Array.isArray(payload.message)
         ? payload.message.join(', ')
         : payload.message
-      : `Request failed with status ${response.status}`;
+      : translateAppMessage(getRequestLanguage(), 'api.requestFailed', {
+          status: response.status,
+        });
     throw new ApiError(message, response.status, payload);
   }
 
