@@ -1,0 +1,70 @@
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+const TOKEN_STORAGE_KEY = 'samdu_access_token';
+
+export class ApiError<T = unknown> extends Error {
+  status: number;
+  data?: T;
+
+  constructor(message: string, status: number, data?: T) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+const buildUrl = (path: string) =>
+  `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+
+const buildHeaders = (headers?: HeadersInit) => {
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    ...(headers ?? {}),
+  };
+};
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(buildUrl(path), {
+    ...init,
+    headers: buildHeaders(init.headers),
+  });
+
+  const isJson = response.headers.get('content-type')?.includes('application/json');
+  const payload = isJson ? await response.json() : null;
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+    const message = payload?.message
+      ? Array.isArray(payload.message)
+        ? payload.message.join(', ')
+        : payload.message
+      : `Request failed with status ${response.status}`;
+    throw new ApiError(message, response.status, payload);
+  }
+
+  return payload as T;
+}
+
+export const apiClient = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+};
+
+export const authStorage = {
+  getToken: () => localStorage.getItem(TOKEN_STORAGE_KEY),
+  setToken: (token: string) => localStorage.setItem(TOKEN_STORAGE_KEY, token),
+  clear: () => localStorage.removeItem(TOKEN_STORAGE_KEY),
+};

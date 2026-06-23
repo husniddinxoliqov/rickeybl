@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  STAFF
+  ROOT
+}
+
+enum StudentStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum CoinTransactionType {
+  EARN
+  DEDUCT
+  RESERVE
+  REFUND
+}
+
+enum ShopOrderStatus {
+  PENDING
+  APPROVED
+  RECEIVED
+  CANCELLED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  REWARD
+  SHOP
+  SYSTEM
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  telegramId         String?             @unique
+  username           String              @unique
+  role               UserRole            @default(STUDENT)
+  passwordHash       String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  studentProfile     StudentProfile?
+  approvedStudents   StudentProfile[]    @relation("StudentApprovedBy")
+  coinTransactions   CoinTransaction[]
+  userBadges         UserBadge[]         @relation("UserBadges")
+  awardedBadges      UserBadge[]         @relation("BadgeAwardedBy")
+  createdEvents      Event[]             @relation("EventCreatedBy")
+  eventRegistrations EventRegistration[]
+  shopOrders         ShopOrder[]         @relation("ShopOrderUser")
+  approvedOrders     ShopOrder[]         @relation("ShopOrderApprovedBy")
+  notifications      Notification[]
+  auditLogs          AuditLog[]          @relation("AuditActor")
+}
+
+model StudentProfile {
+  id         String        @id @default(cuid())
+  userId     String        @unique
+  studentId  String        @unique
+  fullName   String
+  facultyId  String
+  groupId    String
+  status     StudentStatus @default(PENDING)
+  approvedBy String?
+  approvedAt DateTime?
+  joinedAt   DateTime      @default(now())
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  faculty    Faculty       @relation(fields: [facultyId], references: [id])
+  group      Group         @relation(fields: [groupId], references: [id])
+  approver   User?         @relation("StudentApprovedBy", fields: [approvedBy], references: [id])
+
+  @@index([facultyId])
+  @@index([groupId])
+}
+
+model Faculty {
+  id        String           @id @default(cuid())
+  name      String
+  code      String           @unique
+  createdAt DateTime         @default(now())
+  students  StudentProfile[]
+  groups    Group[]
+  events    Event[]
+}
+
+model Group {
+  id          String           @id @default(cuid())
+  facultyId   String
+  name        String
+  code        String           @unique
+  joinCode    String           @unique
+  coinBalance Int              @default(0)
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  faculty     Faculty          @relation(fields: [facultyId], references: [id])
+  students    StudentProfile[]
+
+  @@index([facultyId])
+}
+
+model CoinTransaction {
+  id          String              @id @default(cuid())
+  userId      String
+  amount      Int
+  type        CoinTransactionType
+  reason      String
+  referenceId String?
+  createdAt   DateTime            @default(now())
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([referenceId])
+}
+
+model Badge {
+  id            String      @id @default(cuid())
+  name          String
+  description   String
+  iconUrl       String?
+  requiredCoins Int         @default(0)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  userBadges    UserBadge[]
+}
+
+model UserBadge {
+  id         String    @id @default(cuid())
+  userId     String
+  badgeId    String
+  awardedAt  DateTime  @default(now())
+  awardedBy  String?
+  note       String?
+  user       User      @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
+  badge      Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awarder    User?     @relation("BadgeAwardedBy", fields: [awardedBy], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([badgeId])
+}
+
+model Event {
+  id            String                @id @default(cuid())
+  title         String
+  description   String
+  facultyId     String?
+  startAt       DateTime
+  endAt         DateTime?
+  createdBy     String
+  isPublished   Boolean               @default(false)
+  coinsReward   Int                   @default(0)
+  createdAt     DateTime              @default(now())
+  faculty       Faculty?              @relation(fields: [facultyId], references: [id])
+  creator       User                  @relation("EventCreatedBy", fields: [createdBy], references: [id])
+  registrations EventRegistration[]
+
+  @@index([facultyId])
+  @@index([startAt])
+}
+
+model EventRegistration {
+  id           String   @id @default(cuid())
+  eventId       String
+  userId        String
+  registeredAt  DateTime @default(now())
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model ShopItem {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String?
+  coinCost    Int
+  stock       Int         @default(0)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  orders      ShopOrder[]
+}
+
+model ShopOrder {
+  id         String          @id @default(cuid())
+  userId     String
+  itemId     String
+  quantity   Int             @default(1)
+  totalCost  Int
+  status     ShopOrderStatus @default(PENDING)
+  notes      String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  approvedBy String?
+  approvedAt DateTime?
+  receivedAt DateTime?
+  user       User            @relation("ShopOrderUser", fields: [userId], references: [id], onDelete: Cascade)
+  item       ShopItem        @relation(fields: [itemId], references: [id])
+  approver   User?           @relation("ShopOrderApprovedBy", fields: [approvedBy], references: [id])
+
+  @@index([userId, status])
+  @@index([itemId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
