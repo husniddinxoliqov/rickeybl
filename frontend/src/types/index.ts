@@ -4,6 +4,9 @@ export type CoinTransactionType = 'EARN' | 'DEDUCT' | 'RESERVE' | 'REFUND';
 export type ShopOrderStatus = 'PENDING' | 'APPROVED' | 'RECEIVED' | 'CANCELLED';
 export type NotificationType = 'INFO' | 'WARNING' | 'REWARD' | 'SHOP' | 'SYSTEM';
 
+/** Localized text map returned from the API for DB content. */
+export type I18nMap = Record<string, string>;
+
 export interface Faculty {
   id: string;
   name: string;
@@ -38,6 +41,16 @@ export interface StudentProfile {
   group?: Group;
 }
 
+export interface StaffAssignment {
+  id: string;
+  userId: string;
+  facultyId: string;
+  groupId?: string | null;
+  createdAt: string;
+  faculty?: Faculty;
+  group?: Group | null;
+}
+
 export interface User {
   id: string;
   telegramId?: string | null;
@@ -47,6 +60,7 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   studentProfile?: StudentProfile | null;
+  staffAssignments?: StaffAssignment[];
 }
 
 export interface CoinTransaction {
@@ -63,6 +77,8 @@ export interface Badge {
   id: string;
   name: string;
   description: string;
+  nameI18n?: I18nMap | null;
+  descriptionI18n?: I18nMap | null;
   iconUrl?: string | null;
   requiredCoins: number;
   isActive: boolean;
@@ -84,6 +100,8 @@ export interface EventEntity {
   id: string;
   title: string;
   description: string;
+  titleI18n?: I18nMap | null;
+  descriptionI18n?: I18nMap | null;
   facultyId?: string | null;
   startAt: string;
   endAt?: string | null;
@@ -108,6 +126,8 @@ export interface ShopItem {
   id: string;
   name: string;
   description: string;
+  nameI18n?: I18nMap | null;
+  descriptionI18n?: I18nMap | null;
   imageUrl?: string | null;
   coinCost: number;
   stock: number;
@@ -176,3 +196,4 @@ export interface AdminStats {
   activeOrders: number;
   coinsAwarded: number;
 }
+

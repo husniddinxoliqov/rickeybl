@@ -1,12 +1,15 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationType, Prisma, StudentStatus } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
+import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentProfileDto } from './dto/create-student-profile.dto';
@@ -120,24 +123,29 @@ export class StudentsService {
     return profile;
   }
 
-  async approvePending(actorId: string, id: string) {
+  async approvePending(actor: AuthenticatedUser, id: string) {
     const profile = await this.getStudentById(id);
     if (profile.status !== StudentStatus.PENDING) {
       throw new ConflictException('Only pending profiles can be approved');
+    }
+
+    const scope = resolveStaffScope(actor);
+    if (scope && !isStudentInScope(scope, profile.facultyId, profile.groupId)) {
+      throw new ForbiddenException('Student is not in your assigned scope');
     }
 
     const updated = await this.prisma.studentProfile.update({
       where: { id },
       data: {
         status: StudentStatus.ACTIVE,
-        approvedBy: actorId,
+        approvedBy: actor.id,
         approvedAt: new Date(),
       },
       include: profileInclude,
     });
 
     await this.auditService.log(
-      actorId,
+      actor.id,
       'student.approved',
       'StudentProfile',
       updated.id,
@@ -155,24 +163,29 @@ export class StudentsService {
     return updated;
   }
 
-  async rejectPending(actorId: string, id: string) {
+  async rejectPending(actor: AuthenticatedUser, id: string) {
     const profile = await this.getStudentById(id);
     if (profile.status !== StudentStatus.PENDING) {
       throw new ConflictException('Only pending profiles can be rejected');
+    }
+
+    const scope = resolveStaffScope(actor);
+    if (scope && !isStudentInScope(scope, profile.facultyId, profile.groupId)) {
+      throw new ForbiddenException('Student is not in your assigned scope');
     }
 
     const updated = await this.prisma.studentProfile.update({
       where: { id },
       data: {
         status: StudentStatus.REJECTED,
-        approvedBy: actorId,
+        approvedBy: actor.id,
         approvedAt: new Date(),
       },
       include: profileInclude,
     });
 
     await this.auditService.log(
-      actorId,
+      actor.id,
       'student.rejected',
       'StudentProfile',
       updated.id,
@@ -190,9 +203,29 @@ export class StudentsService {
     return updated;
   }
 
-  async listPending() {
+  async listPending(actor: AuthenticatedUser) {
+    const scope = resolveStaffScope(actor);
+
+    const where: Prisma.StudentProfileWhereInput = { status: StudentStatus.PENDING };
+
+    if (scope) {
+      const conditions: Prisma.StudentProfileWhereInput[] = [];
+      if (scope.facultyWideIds.length) {
+        conditions.push({ facultyId: { in: scope.facultyWideIds } });
+      }
+      if (scope.groupSpecificIds.length) {
+        conditions.push({ groupId: { in: scope.groupSpecificIds } });
+      }
+      if (conditions.length) {
+        where.OR = conditions;
+      } else {
+        // Staff has assignments record but no resolved scope entries — deny all
+        return [];
+      }
+    }
+
     return this.prisma.studentProfile.findMany({
-      where: { status: StudentStatus.PENDING },
+      where,
       include: profileInclude,
       orderBy: { joinedAt: 'asc' },
     });

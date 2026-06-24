@@ -30,6 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.sub },
       include: {
         studentProfile: true,
+        staffAssignments: {
+          select: { facultyId: true, groupId: true },
+        },
       },
     });
 
@@ -43,6 +46,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       role: user.role,
       telegramId: user.telegramId,
       studentProfile: user.studentProfile,
+      staffAssignments: user.staffAssignments,
     };
   }
 }

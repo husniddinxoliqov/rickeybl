@@ -9,6 +9,7 @@ import { CoinTransactionType, NotificationType, Prisma, ShopOrderStatus, UserRol
 import { AuditService } from '../audit/audit.service';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
+import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -134,11 +135,19 @@ export class ShopService {
     return order;
   }
 
-  async approveOrder(staffId: string, orderId: string) {
+  async approveOrder(actor: AuthenticatedUser, orderId: string) {
     const order = await this.prisma.$transaction(async (tx) => {
       const existing = await tx.shopOrder.findUnique({
         where: { id: orderId },
-        include: orderInclude,
+        include: {
+          ...orderInclude,
+          user: {
+            select: {
+              ...publicUserBaseSelect,
+              studentProfile: true,
+            },
+          },
+        },
       });
       if (!existing) {
         throw new NotFoundException('Shop order not found');
@@ -146,6 +155,15 @@ export class ShopService {
       if (existing.status !== ShopOrderStatus.PENDING) {
         throw new ConflictException('Only pending orders can be approved');
       }
+
+      const scope = resolveStaffScope(actor);
+      const studentProfile = existing.user.studentProfile;
+      if (scope && studentProfile) {
+        if (!isStudentInScope(scope, studentProfile.facultyId, studentProfile.groupId)) {
+          throw new ForbiddenException('Order is not in your assigned scope');
+        }
+      }
+
       if (existing.item.stock !== -1 && existing.item.stock < existing.quantity) {
         throw new BadRequestException('Insufficient stock to approve this order');
       }
@@ -165,14 +183,14 @@ export class ShopService {
         where: { id: orderId },
         data: {
           status: ShopOrderStatus.APPROVED,
-          approvedBy: staffId,
+          approvedBy: actor.id,
           approvedAt: new Date(),
         },
         include: orderInclude,
       });
     });
 
-    await this.auditService.log(staffId, 'shop.order_approved', 'ShopOrder', order.id, null, {
+    await this.auditService.log(actor.id, 'shop.order_approved', 'ShopOrder', order.id, null, {
       status: order.status,
     });
     await this.notificationsService.createNotification(
@@ -297,9 +315,32 @@ export class ShopService {
     });
   }
 
-  listPendingOrders() {
+  async listPendingOrders(actor: AuthenticatedUser) {
+    const scope = resolveStaffScope(actor);
+
+    const where: Prisma.ShopOrderWhereInput = { status: ShopOrderStatus.PENDING };
+
+    if (scope) {
+      const conditions: Prisma.ShopOrderWhereInput[] = [];
+      if (scope.facultyWideIds.length) {
+        conditions.push({
+          user: { studentProfile: { facultyId: { in: scope.facultyWideIds } } },
+        });
+      }
+      if (scope.groupSpecificIds.length) {
+        conditions.push({
+          user: { studentProfile: { groupId: { in: scope.groupSpecificIds } } },
+        });
+      }
+      if (conditions.length) {
+        where.OR = conditions;
+      } else {
+        return [];
+      }
+    }
+
     return this.prisma.shopOrder.findMany({
-      where: { status: ShopOrderStatus.PENDING },
+      where,
       include: orderInclude,
       orderBy: { createdAt: 'asc' },
     });

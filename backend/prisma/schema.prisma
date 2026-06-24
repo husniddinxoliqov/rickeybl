@@ -61,6 +61,7 @@ model User {
   approvedOrders     ShopOrder[]         @relation("ShopOrderApprovedBy")
   notifications      Notification[]
   auditLogs          AuditLog[]          @relation("AuditActor")
+  staffAssignments   StaffAssignment[]   @relation("StaffAssignments")
 }
 
 model StudentProfile {
@@ -84,26 +85,28 @@ model StudentProfile {
 }
 
 model Faculty {
-  id        String           @id @default(cuid())
-  name      String
-  code      String           @unique
-  createdAt DateTime         @default(now())
-  students  StudentProfile[]
-  groups    Group[]
-  events    Event[]
+  id               String            @id @default(cuid())
+  name             String
+  code             String            @unique
+  createdAt        DateTime          @default(now())
+  students         StudentProfile[]
+  groups           Group[]
+  events           Event[]
+  staffAssignments StaffAssignment[] @relation("FacultyStaffAssignments")
 }
 
 model Group {
-  id          String           @id @default(cuid())
-  facultyId   String
-  name        String
-  code        String           @unique
-  joinCode    String           @unique
-  coinBalance Int              @default(0)
-  isActive    Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  faculty     Faculty          @relation(fields: [facultyId], references: [id])
-  students    StudentProfile[]
+  id               String            @id @default(cuid())
+  facultyId        String
+  name             String
+  code             String            @unique
+  joinCode         String            @unique
+  coinBalance      Int               @default(0)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  faculty          Faculty           @relation(fields: [facultyId], references: [id])
+  students         StudentProfile[]
+  staffAssignments StaffAssignment[] @relation("GroupStaffAssignments")
 
   @@index([facultyId])
 }
@@ -123,14 +126,16 @@ model CoinTransaction {
 }
 
 model Badge {
-  id            String      @id @default(cuid())
-  name          String
-  description   String
-  iconUrl       String?
-  requiredCoins Int         @default(0)
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  userBadges    UserBadge[]
+  id              String      @id @default(cuid())
+  name            String
+  description     String
+  nameI18n        Json?
+  descriptionI18n Json?
+  iconUrl         String?
+  requiredCoins   Int         @default(0)
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  userBadges      UserBadge[]
 }
 
 model UserBadge {
@@ -149,19 +154,21 @@ model UserBadge {
 }
 
 model Event {
-  id            String                @id @default(cuid())
-  title         String
-  description   String
-  facultyId     String?
-  startAt       DateTime
-  endAt         DateTime?
-  createdBy     String
-  isPublished   Boolean               @default(false)
-  coinsReward   Int                   @default(0)
-  createdAt     DateTime              @default(now())
-  faculty       Faculty?              @relation(fields: [facultyId], references: [id])
-  creator       User                  @relation("EventCreatedBy", fields: [createdBy], references: [id])
-  registrations EventRegistration[]
+  id              String                @id @default(cuid())
+  title           String
+  description     String
+  titleI18n       Json?
+  descriptionI18n Json?
+  facultyId       String?
+  startAt         DateTime
+  endAt           DateTime?
+  createdBy       String
+  isPublished     Boolean               @default(false)
+  coinsReward     Int                   @default(0)
+  createdAt       DateTime              @default(now())
+  faculty         Faculty?              @relation(fields: [facultyId], references: [id])
+  creator         User                  @relation("EventCreatedBy", fields: [createdBy], references: [id])
+  registrations   EventRegistration[]
 
   @@index([facultyId])
   @@index([startAt])
@@ -180,15 +187,17 @@ model EventRegistration {
 }
 
 model ShopItem {
-  id          String      @id @default(cuid())
-  name        String
-  description String
-  imageUrl    String?
-  coinCost    Int
-  stock       Int         @default(0)
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  orders      ShopOrder[]
+  id              String      @id @default(cuid())
+  name            String
+  description     String
+  nameI18n        Json?
+  descriptionI18n Json?
+  imageUrl        String?
+  coinCost        Int
+  stock           Int         @default(0)
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  orders          ShopOrder[]
 }
 
 model ShopOrder {
@@ -240,4 +249,22 @@ model AuditLog {
   @@index([actorId])
   @@index([entity, entityId])
   @@index([createdAt])
+}
+
+/// Scoped faculty/group access for STAFF users.
+/// A STAFF user with no rows here retains unrestricted access (MVP fallback).
+/// ROOT users bypass this table entirely.
+model StaffAssignment {
+  id        String   @id @default(cuid())
+  userId    String
+  facultyId String
+  groupId   String?
+  createdAt DateTime @default(now())
+  user      User     @relation("StaffAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  faculty   Faculty  @relation("FacultyStaffAssignments", fields: [facultyId], references: [id], onDelete: Cascade)
+  group     Group?   @relation("GroupStaffAssignments", fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, facultyId, groupId])
+  @@index([userId])
+  @@index([facultyId])
 }

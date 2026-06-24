@@ -70,6 +70,22 @@ export function getRequestLanguage(): AppLanguage {
   return getStoredLanguage() ?? detectAppLanguage();
 }
 
+/**
+ * Picks the best-fit locale string from a DB i18n map (e.g. `{ uz: '…', ru: '…', en: '…' }`).
+ * Falls back to the `fallback` value when no translation is available.
+ */
+export function localizeField(
+  i18nMap: Record<string, string> | null | undefined,
+  language: AppLanguage,
+  fallback: string,
+): string {
+  if (!i18nMap) {
+    return fallback;
+  }
+
+  return i18nMap[language] ?? i18nMap['en'] ?? i18nMap['uz'] ?? fallback;
+}
+
 export function translateAppMessage(
   language: AppLanguage,
   key: string,

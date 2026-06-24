@@ -71,6 +71,9 @@ export const appMessages: Record<AppLanguage, Record<string, string>> = {
     'role.STAFF': 'Xodim',
     'role.ROOT': 'Admin',
     'api.requestFailed': "So'rov xato yakunlandi ({{status}}).",
+    'common.loading': 'Yuklanmoqda…',
+    'common.error': "Xato yuz berdi. Qayta urinib ko'ring.",
+    'common.retry': 'Qayta urinish',
   },
   ru: {
     'auth.title': 'SamDU Mini-App',
@@ -143,6 +146,9 @@ export const appMessages: Record<AppLanguage, Record<string, string>> = {
     'role.STAFF': 'Сотрудник',
     'role.ROOT': 'Администратор',
     'api.requestFailed': 'Запрос завершился ошибкой ({{status}}).',
+    'common.loading': 'Загрузка…',
+    'common.error': 'Произошла ошибка. Попробуйте ещё раз.',
+    'common.retry': 'Повторить',
   },
   en: {
     'auth.title': 'SamDU Mini-App',
@@ -215,5 +221,8 @@ export const appMessages: Record<AppLanguage, Record<string, string>> = {
     'role.STAFF': 'Staff',
     'role.ROOT': 'Admin',
     'api.requestFailed': 'Request failed with status {{status}}.',
+    'common.loading': 'Loading…',
+    'common.error': 'Something went wrong. Please try again.',
+    'common.retry': 'Retry',
   },
 };

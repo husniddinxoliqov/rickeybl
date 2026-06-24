@@ -1,4 +1,4 @@
-import { StudentProfile, UserRole } from '@prisma/client';
+import { StaffAssignment, StudentProfile, UserRole } from '@prisma/client';
 
 export interface AuthenticatedUser {
   id: string;
@@ -6,4 +6,5 @@ export interface AuthenticatedUser {
   role: UserRole;
   telegramId?: string | null;
   studentProfile?: StudentProfile | null;
+  staffAssignments?: Pick<StaffAssignment, 'facultyId' | 'groupId'>[];
 }

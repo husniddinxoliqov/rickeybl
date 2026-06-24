@@ -10,6 +10,7 @@ import {
 import {
   detectAppLanguage,
   LANGUAGE_LOCALES,
+  localizeField,
   persistLanguage,
   translateAppMessage,
 } from './config';
@@ -21,6 +22,8 @@ interface I18nContextValue {
   setLanguage: (language: AppLanguage) => void;
   t: (key: string, values?: Record<string, string | number>) => string;
   formatDate: (value: string | number | Date) => string;
+  /** Picks the best locale value from a DB i18n map, falling back to `fallback`. */
+  localize: (map: Record<string, string> | null | undefined, fallback: string) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -54,14 +57,21 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [language],
   );
 
+  const localize = useCallback(
+    (map: Record<string, string> | null | undefined, fallback: string) =>
+      localizeField(map, language, fallback),
+    [language],
+  );
+
   const contextValue = useMemo(
     () => ({
       language,
       setLanguage,
       t,
       formatDate,
+      localize,
     }),
-    [formatDate, language, setLanguage, t],
+    [formatDate, language, localize, setLanguage, t],
   );
 
   return <I18nContext.Provider value={contextValue}>{children}</I18nContext.Provider>;

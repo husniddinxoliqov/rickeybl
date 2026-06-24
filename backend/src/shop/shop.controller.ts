@@ -39,15 +39,15 @@ export class ShopController {
   @Get('orders/pending')
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
-  listPendingOrders() {
-    return this.shopService.listPendingOrders();
+  listPendingOrders(@CurrentUser() user: AuthenticatedUser) {
+    return this.shopService.listPendingOrders(user);
   }
 
   @Post('orders/:id/approve')
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
   approveOrder(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.shopService.approveOrder(user.id, id);
+    return this.shopService.approveOrder(user, id);
   }
 
   @Post('orders/:id/received')

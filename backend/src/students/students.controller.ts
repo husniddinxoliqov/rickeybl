@@ -29,21 +29,21 @@ export class StudentsController {
   @Get('pending')
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
-  listPending() {
-    return this.studentsService.listPending();
+  listPending(@CurrentUser() user: AuthenticatedUser) {
+    return this.studentsService.listPending(user);
   }
 
   @Post(':id/approve')
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
   approvePending(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.studentsService.approvePending(user.id, id);
+    return this.studentsService.approvePending(user, id);
   }
 
   @Post(':id/reject')
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
   rejectPending(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.studentsService.rejectPending(user.id, id);
+    return this.studentsService.rejectPending(user, id);
   }
 }
