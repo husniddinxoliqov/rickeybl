@@ -186,6 +186,36 @@ const localizedMessages: Record<string, Record<AppLocale, string>> = {
     ru: 'Недостаточно прав роли',
     en: 'Insufficient role permissions',
   },
+  'Student is not in your assigned scope': {
+    uz: 'Talaba sizning belgilangan doirangizda emas',
+    ru: 'Студент не входит в вашу зону ответственности',
+    en: 'Student is not in your assigned scope',
+  },
+  'Order is not in your assigned scope': {
+    uz: 'Buyurtma sizning belgilangan doirangizda emas',
+    ru: 'Заказ не входит в вашу зону ответственности',
+    en: 'Order is not in your assigned scope',
+  },
+  'Staff user not found': {
+    uz: 'Xodim foydalanuvchi topilmadi',
+    ru: 'Пользователь-сотрудник не найден',
+    en: 'Staff user not found',
+  },
+  'Staff assignment already exists': {
+    uz: 'Xodim biriktirilishi allaqachon mavjud',
+    ru: 'Назначение сотрудника уже существует',
+    en: 'Staff assignment already exists',
+  },
+  'Staff assignment not found': {
+    uz: 'Xodim biriktirilishi topilmadi',
+    ru: 'Назначение сотрудника не найдено',
+    en: 'Staff assignment not found',
+  },
+  'Group not found or does not belong to the given faculty': {
+    uz: 'Guruh topilmadi yoki ko\'rsatilgan fakultetga tegishli emas',
+    ru: 'Группа не найдена или не принадлежит указанному факультету',
+    en: 'Group not found or does not belong to the given faculty',
+  },
 };
 
 export function resolveLocale(header?: string | string[]): AppLocale {
