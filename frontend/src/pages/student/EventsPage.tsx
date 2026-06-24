@@ -47,7 +47,7 @@ export default function EventsPage() {
     );
   }
 
-  if (error) {
+  if (error && !events.length) {
     return (
       <section>
         <h1>{t('student.events.title')}</h1>
@@ -61,6 +61,7 @@ export default function EventsPage() {
     <section>
       <h1>{t('student.events.title')}</h1>
       {messageKey ? <p style={{ color: '#0f766e' }}>{t(messageKey)}</p> : null}
+      {error ? <p style={{ color: '#dc2626' }}>{error}</p> : null}
       <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
         {events.length ? (
           events.map((event) => (
