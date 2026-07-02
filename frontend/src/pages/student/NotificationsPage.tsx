@@ -6,10 +6,20 @@ import { Notification } from '../../types';
 export default function NotificationsPage() {
   const { t, localize } = useI18n();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    const data = await apiClient.get<Notification[]>('/api/notifications');
-    setNotifications(data);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient.get<Notification[]>('/api/notifications');
+      setNotifications(data);
+    } catch {
+      setError(t('common.error'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -17,13 +27,37 @@ export default function NotificationsPage() {
   }, []);
 
   const markRead = async (id: string) => {
-    await apiClient.post(`/api/notifications/${id}/read`);
-    await load();
+    try {
+      await apiClient.post(`/api/notifications/${id}/read`);
+      await load();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('common.error'));
+    }
   };
+
+  if (isLoading) {
+    return (
+      <section>
+        <h1>{t('student.notifications.title')}</h1>
+        <p>{t('common.loading')}</p>
+      </section>
+    );
+  }
+
+  if (error && !notifications.length) {
+    return (
+      <section>
+        <h1>{t('student.notifications.title')}</h1>
+        <p style={{ color: '#dc2626' }}>{error}</p>
+        <button onClick={() => void load()}>{t('common.retry')}</button>
+      </section>
+    );
+  }
 
   return (
     <section>
       <h1>{t('student.notifications.title')}</h1>
+      {error ? <p style={{ color: '#dc2626', marginTop: 8 }}>{error}</p> : null}
       <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
         {notifications.length ? (
           notifications.map((notification) => (
