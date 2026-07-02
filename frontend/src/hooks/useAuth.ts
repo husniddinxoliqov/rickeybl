@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
 import { apiClient, authStorage, ApiError } from '../api/client';
 import { getRequestLanguage, translateAppMessage } from '../i18n/config';
@@ -22,6 +22,7 @@ export function useAuth(): UseAuthState {
   const [token, setToken] = useState<string | null>(authStorage.getToken());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const telegramTriedRef = useRef(false);
 
   const refreshProfile = useCallback(async () => {
     const profile = await apiClient.get<User>('/api/auth/me');
@@ -90,8 +91,9 @@ export function useAuth(): UseAuthState {
 
         if (authStorage.getToken()) {
           await refreshProfile();
-        } else if (WebApp.initData || window.Telegram?.WebApp?.initData) {
+        } else if (!telegramTriedRef.current && (WebApp.initData || window.Telegram?.WebApp?.initData)) {
           await authenticateWithTelegram();
+          telegramTriedRef.current = true;
         } else {
           setUser(null);
           setToken(null);
@@ -106,6 +108,7 @@ export function useAuth(): UseAuthState {
           setError(translateAppMessage(getRequestLanguage(), 'auth.unavailable'));
         }
       } finally {
+        telegramTriedRef.current = true;
         setIsLoading(false);
       }
     };

@@ -12,6 +12,7 @@ export class AuthRateLimitService {
   private readonly windowMs = 60 * 1000;
 
   consume(key: string) {
+    this.cleanupExpired();
     const now = Date.now();
     const state = this.attempts.get(key);
     if (!state || now - state.windowStart > this.windowMs) {
@@ -25,6 +26,15 @@ export class AuthRateLimitService {
         'Too many authentication attempts. Please try again later.',
         HttpStatus.TOO_MANY_REQUESTS,
       );
+    }
+  }
+
+  private cleanupExpired() {
+    const now = Date.now();
+    for (const [key, value] of this.attempts.entries()) {
+      if (now - value.windowStart > this.windowMs) {
+        this.attempts.delete(key);
+      }
     }
   }
 }

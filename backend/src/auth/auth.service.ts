@@ -201,7 +201,7 @@ export class AuthService {
     }
 
     if (!allowedRoles.includes(user.role)) {
-      throw new ForbiddenException('This account role is not allowed for this login endpoint');
+      throw new ForbiddenException('Your account type cannot use this login method');
     }
     if (!user.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
@@ -215,10 +215,10 @@ export class AuthService {
         where: { id: user.id },
         data: {
           failedLoginCount,
-          lockedUntil: lock ? new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000) : null,
+          ...(lock ? { lockedUntil: new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000) } : {}),
         },
       });
-      await this.auditService.log(user.id, 'auth.login_failed', 'User', user.id, null, {
+      await this.auditService.log(null, 'auth.login_failed', 'User', user.id, null, {
         failedLoginCount,
       });
       throw new UnauthorizedException('Invalid credentials');

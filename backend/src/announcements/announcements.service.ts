@@ -91,18 +91,24 @@ export class AnnouncementsService {
     if (!existing) {
       throw new NotFoundException('Announcement not found');
     }
-    this.assertCanWrite(actor, dto.facultyId ?? existing.facultyId ?? undefined, dto.groupId ?? existing.groupId ?? undefined);
     if (actor.role === UserRole.STAFF && existing.createdBy !== actor.id) {
+      // Editing another staff member's announcement is allowed only when the
+      // current announcement is already inside the actor scope.
       this.assertCanWrite(actor, existing.facultyId ?? undefined, existing.groupId ?? undefined);
     }
+    this.assertCanWrite(
+      actor,
+      dto.facultyId ?? existing.facultyId ?? undefined,
+      dto.groupId ?? existing.groupId ?? undefined,
+    );
 
     const updated = await this.prisma.announcement.update({
       where: { id },
       data: {
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
         ...(dto.body !== undefined ? { body: dto.body.trim() } : {}),
-        ...(dto.titleI18n !== undefined ? { titleI18n: normalizeLocalizedText(dto.titleI18n) ?? Prisma.JsonNull } : {}),
-        ...(dto.bodyI18n !== undefined ? { bodyI18n: normalizeLocalizedText(dto.bodyI18n) ?? Prisma.JsonNull } : {}),
+        ...(dto.titleI18n !== undefined ? { titleI18n: normalizeLocalizedText(dto.titleI18n) || Prisma.JsonNull } : {}),
+        ...(dto.bodyI18n !== undefined ? { bodyI18n: normalizeLocalizedText(dto.bodyI18n) || Prisma.JsonNull } : {}),
         ...(dto.facultyId !== undefined ? { facultyId: dto.facultyId || null } : {}),
         ...(dto.groupId !== undefined ? { groupId: dto.groupId || null } : {}),
         ...(dto.isPublished !== undefined ? { isPublished: dto.isPublished } : {}),
