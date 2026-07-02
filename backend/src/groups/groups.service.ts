@@ -6,6 +6,7 @@ import { randomBytes } from 'crypto';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
+import { UpdateGroupDto } from './dto/update-group.dto';
 
 @Injectable()
 export class GroupsService {
@@ -81,6 +82,52 @@ export class GroupsService {
     );
 
     return updated;
+  }
+
+  async updateGroup(actorId: string, id: string, dto: UpdateGroupDto) {
+    const existing = await this.prisma.group.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Group not found');
+    }
+
+    const group = await this.prisma.group.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.code !== undefined ? { code: dto.code.trim().toUpperCase() } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+      include: { faculty: true },
+    });
+
+    await this.auditService.log(actorId, 'group.updated', 'Group', group.id, {
+      name: existing.name,
+      code: existing.code,
+    }, {
+      name: group.name,
+      code: group.code,
+    });
+
+    return group;
+  }
+
+  async deleteGroup(actorId: string, id: string) {
+    const existing = await this.prisma.group.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Group not found');
+    }
+
+    const group = await this.prisma.group.update({
+      where: { id },
+      data: { isActive: false },
+      include: { faculty: true },
+    });
+
+    await this.auditService.log(actorId, 'group.deleted', 'Group', group.id, { isActive: true }, {
+      isActive: false,
+    });
+
+    return group;
   }
 
   private generateJoinCode() {

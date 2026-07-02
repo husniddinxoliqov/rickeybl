@@ -16,7 +16,7 @@
     "skipLibCheck": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": ["node", "jest"],
     "ignoreDeprecations": "5.0"
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"],

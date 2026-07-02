@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { EventsService } from './events.service';
 
 @Controller('events')
@@ -28,6 +29,24 @@ export class EventsController {
   @Roles(UserRole.STAFF, UserRole.ROOT)
   createEvent(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateEventDto) {
     return this.eventsService.createEvent(user, dto);
+  }
+
+  @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STAFF, UserRole.ROOT)
+  updateEvent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateEventDto,
+  ) {
+    return this.eventsService.updateEvent(user, id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STAFF, UserRole.ROOT)
+  deleteEvent(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.eventsService.deleteEvent(user.id, id);
   }
 
   @Post(':id/register')
