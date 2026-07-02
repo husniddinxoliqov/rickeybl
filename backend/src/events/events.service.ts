@@ -64,8 +64,14 @@ export class EventsService {
       }
 
       const scope = resolveStaffScope(actor);
-      if (scope && !scope.facultyWideIds.includes(dto.facultyId)) {
-        throw new ForbiddenException('Faculty is not in your assigned scope');
+      if (scope) {
+        // Allow access if the staff has ANY assignment (faculty-wide OR
+        // group-specific) for this faculty, so a staff member scoped to
+        // a specific group within the faculty can still create faculty events.
+        const accessibleFacultyIds = (actor.staffAssignments ?? []).map((a) => a.facultyId);
+        if (!accessibleFacultyIds.includes(dto.facultyId)) {
+          throw new ForbiddenException('Faculty is not in your assigned scope');
+        }
       }
     }
 
