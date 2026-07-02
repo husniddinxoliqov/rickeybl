@@ -90,7 +90,7 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     }
 
     const rootUsername = env.ROOT_USERNAME?.trim();
-    if (!rootUsername || ROOT_USERNAME_PLACEHOLDERS.has(rootUsername)) {
+    if (!rootUsername || ROOT_USERNAME_PLACEHOLDERS.has(rootUsername.toLowerCase())) {
       throw new Error(
         'ROOT_USERNAME is not set or uses a default value ("admin", "root", etc.). Set a custom admin username before running in production.',
       );
