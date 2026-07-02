@@ -15,10 +15,12 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: postgresql://rickeybl:rickeybl_dev@postgres:5432/rickeybl?schema=public
-      JWT_SECRET: change_this_secret
-      BOT_TOKEN: your_bot_token
+      JWT_SECRET: dev_only_jwt_secret_please_change_0123456789
+      BOT_TOKEN: 0000000000:dev_only_bot_token_placeholder
       ROOT_USERNAME: admin
+      ROOT_EMAIL: admin@example.local
       ROOT_PASSWORD: change_this_password
+      NODE_ENV: development
       PORT: 3000
     ports:
       - "3000:3000"

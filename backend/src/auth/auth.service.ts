@@ -1,5 +1,8 @@
 import {
   BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -7,10 +10,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { StudentStatus, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminLoginDto } from './dto/admin-login.dto';
+import { CredentialLoginDto } from './dto/credential-login.dto';
 
 interface TelegramUserPayload {
   id: number;
@@ -18,6 +22,10 @@ interface TelegramUserPayload {
   first_name?: string;
   last_name?: string;
 }
+
+const MAX_FAILED_LOGINS = 5;
+const LOCKOUT_MINUTES = 15;
+const REFRESH_TTL_DAYS = 30;
 
 @Injectable()
 export class AuthService {
@@ -64,33 +72,171 @@ export class AuthService {
       },
     );
 
-    return {
-      accessToken: this.signToken(user.id, user.role, user.telegramId ?? undefined),
-      user: safeUser,
-    };
+    const authPayload = await this.issueSessionTokens(user.id, user.role, user.telegramId ?? undefined);
+
+    return { ...authPayload, user: safeUser };
   }
 
   async adminLogin(dto: AdminLoginDto) {
+    const username = dto.username.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({
-      where: { username: dto.username.toLowerCase() },
+      where: { username },
+      include: { studentProfile: true },
+    });
+    if (!user || user.role !== UserRole.ROOT) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.completeCredentialLogin(user.id, dto.password, [UserRole.ROOT]);
+  }
+
+  async credentialLogin(dto: CredentialLoginDto, allowedRoles: UserRole[]) {
+    const email = dto.email.toLowerCase().trim();
+    const user = await this.prisma.user.findUnique({
+      where: { email },
       include: {
         studentProfile: true,
       },
     });
 
-    if (!user || user.role !== UserRole.ROOT || !user.passwordHash) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);
+    return this.completeCredentialLogin(user.id, dto.password, allowedRoles);
+  }
+
+  async refresh(refreshToken: string) {
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    const now = new Date();
+    const session = await this.prisma.authSession.findFirst({
+      where: {
+        refreshTokenHash: tokenHash,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            role: true,
+            telegramId: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!session || !session.user.isActive) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    await this.prisma.authSession.update({
+      where: { id: session.id },
+      data: { revokedAt: now },
+    });
+
+    const payload = await this.issueSessionTokens(
+      session.user.id,
+      session.user.role,
+      session.user.telegramId ?? undefined,
+    );
+    await this.auditService.log(session.user.id, 'auth.session_refreshed', 'AuthSession', payload.sessionId);
+
+    return payload;
+  }
+
+  async logout(userId: string, refreshToken: string) {
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    await this.prisma.authSession.updateMany({
+      where: {
+        userId,
+        refreshTokenHash: tokenHash,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+    await this.auditService.log(userId, 'auth.logout', 'AuthSession');
+    return { success: true };
+  }
+
+  async logoutAll(userId: string) {
+    await this.prisma.authSession.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+    await this.auditService.log(userId, 'auth.logout_all', 'AuthSession');
+    return { success: true };
+  }
+
+  private async completeCredentialLogin(
+    userId: string,
+    password: string,
+    allowedRoles: UserRole[],
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { studentProfile: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const now = new Date();
+    if (user.lockedUntil && user.lockedUntil > now) {
+      await this.auditService.log(user.id, 'auth.login_locked', 'User', user.id, null, {
+        lockedUntil: user.lockedUntil.toISOString(),
+      });
+      throw new HttpException(
+        'Account temporarily locked. Try again later.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    if (!allowedRoles.includes(user.role)) {
+      throw new ForbiddenException('This account role is not allowed for this login endpoint');
+    }
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
+      const failedLoginCount = user.failedLoginCount + 1;
+      const lock = failedLoginCount >= MAX_FAILED_LOGINS;
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginCount,
+          lockedUntil: lock ? new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000) : null,
+        },
+      });
+      await this.auditService.log(user.id, 'auth.login_failed', 'User', user.id, null, {
+        failedLoginCount,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.auditService.log(user.id, 'auth.admin_login', 'User', user.id);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginCount: 0,
+        lockedUntil: null,
+      },
+    });
+
+    const authPayload = await this.issueSessionTokens(user.id, user.role, user.telegramId ?? undefined);
+    await this.auditService.log(user.id, 'auth.credential_login', 'User', user.id);
 
     return {
-      accessToken: this.signToken(user.id, user.role, user.telegramId ?? undefined),
+      ...authPayload,
       user: await this.getProfile(user.id),
     };
   }
@@ -102,6 +248,7 @@ export class AuthService {
         id: true,
         telegramId: true,
         username: true,
+        email: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -133,6 +280,28 @@ export class AuthService {
         expiresIn: role === UserRole.STUDENT ? '7d' : '1d',
       },
     );
+  }
+
+  private async issueSessionTokens(userId: string, role: UserRole, telegramId?: string) {
+    const refreshToken = randomBytes(48).toString('hex');
+    const expiresAt = new Date(Date.now() + REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const session = await this.prisma.authSession.create({
+      data: {
+        userId,
+        refreshTokenHash: this.hashRefreshToken(refreshToken),
+        expiresAt,
+      },
+    });
+
+    return {
+      accessToken: this.signToken(userId, role, telegramId),
+      refreshToken,
+      sessionId: session.id,
+    };
+  }
+
+  private hashRefreshToken(refreshToken: string) {
+    return createHash('sha256').update(refreshToken).digest('hex');
   }
 
   private async resolveTelegramUsername(

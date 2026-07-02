@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { BadgesModule } from './badges/badges.module';
@@ -17,6 +18,8 @@ import { UsersModule } from './users/users.module';
 
 const BOT_TOKEN_PLACEHOLDERS = new Set([
   'your_telegram_bot_token',
+  'your_bot_token',
+  '0000000000:dev_only_bot_token_placeholder',
   'YOUR_BOT_TOKEN',
   'placeholder',
   'token',
@@ -35,6 +38,12 @@ const ROOT_PASSWORD_PLACEHOLDERS = new Set([
   'change_this_password',
   'password',
   'changeme',
+]);
+
+const ROOT_EMAIL_PLACEHOLDERS = new Set([
+  'admin@example.com',
+  'root@example.com',
+  'user@example.com',
 ]);
 
 const WEAK_JWT_SECRETS = new Set([
@@ -95,6 +104,13 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
         'ROOT_USERNAME is not set or uses a default value ("admin", "root", etc.). Set a custom admin username before running in production.',
       );
     }
+
+    const rootEmail = env.ROOT_EMAIL?.trim().toLowerCase();
+    if (!rootEmail || ROOT_EMAIL_PLACEHOLDERS.has(rootEmail)) {
+      throw new Error(
+        'ROOT_EMAIL is not set or uses a default placeholder. Set a unique root email before running in production.',
+      );
+    }
   }
 
   return env;
@@ -118,6 +134,7 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     EventsModule,
     ShopModule,
     AdminModule,
+    AnnouncementsModule,
   ],
   providers: [
     {

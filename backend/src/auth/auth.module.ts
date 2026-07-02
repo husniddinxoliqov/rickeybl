@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuditModule } from '../audit/audit.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
+import { AuthRateLimitService } from './auth-rate-limit.service';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 
@@ -25,7 +26,7 @@ import { JwtStrategy } from './jwt.strategy';
     AuditModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, AuthRateLimitService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}
