@@ -73,7 +73,12 @@ Frontend environment values:
 - `audit`: root global logs + staff-scoped logs
 
 ## Docker
-`docker-compose.yml` starts PostgreSQL and the backend service. The backend container expects the NestJS app dependencies to be installed during image build via `backend/Dockerfile`.
+`docker-compose.yml` starts PostgreSQL, the backend API, and the frontend web app.
+
+- Frontend is served on `http://localhost:8080`
+- Backend API remains available on `http://localhost:3000/api`
+- The bundled frontend nginx config proxies `/api/*` to the backend for same-origin deployments
+- Health checks are enabled for PostgreSQL, the backend (`/api/health`), and the frontend container
 
 ## Security notes
 - JWT payload contains only `sub`, `role`, and optional Telegram ID.
@@ -90,6 +95,7 @@ Frontend environment values:
   - `cd frontend && npm run build`
 - Pilot/prod deployment checks:
   - set non-placeholder values for `BOT_TOKEN`, `JWT_SECRET`, `ROOT_USERNAME`, `ROOT_EMAIL`, `ROOT_PASSWORD` in production
+  - set explicit `CORS_ORIGIN` values in production instead of `*`
   - run seed only with explicit reset flags (`SEED_RESET`, `ALLOW_PROD_RESET`) when needed
 - Monitoring baseline:
   - monitor authentication failures (`auth.login_failed`, `auth.login_locked`)

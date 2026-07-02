@@ -23,9 +23,18 @@ async function bootstrap() {
     );
   }
 
+  const corsOrigin = configService.get<string>('CORS_ORIGIN')?.trim();
+  const corsOrigins =
+    corsOrigin && corsOrigin !== '*'
+      ? corsOrigin
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : true;
+
   app.use(helmet());
   app.enableCors({
-    origin: true,
+    origin: corsOrigins,
     credentials: true,
   });
   app.setGlobalPrefix('api');
