@@ -64,13 +64,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...init,
     headers: buildHeaders(init.headers),
   });
-  let attemptedRefresh = false;
 
   const isJson = response.headers.get('content-type')?.includes('application/json');
   const payload = isJson ? await response.json() : null;
 
   if (response.status === 401) {
-    attemptedRefresh = true;
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       response = await fetch(buildUrl(path), {
@@ -94,7 +92,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   if (!response.ok) {
-    if (response.status === 401 && !attemptedRefresh) {
+    if (response.status === 401) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     }

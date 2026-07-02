@@ -10,6 +10,7 @@ import { CoinsModule } from './coins/coins.module';
 import { EventsModule } from './events/events.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { GroupsModule } from './groups/groups.module';
+import { HealthController } from './health.controller';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShopModule } from './shop/shop.module';
@@ -65,6 +66,13 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   }
 
   if (nodeEnv === 'production') {
+    const corsOrigin = env.CORS_ORIGIN?.trim();
+    if (!corsOrigin || corsOrigin === '*') {
+      throw new Error(
+        'CORS_ORIGIN is not set for production. Provide one or more explicit origins separated by commas.',
+      );
+    }
+
     const botToken = env.BOT_TOKEN?.trim();
     if (!botToken || BOT_TOKEN_PLACEHOLDERS.has(botToken)) {
       throw new Error(
@@ -117,6 +125,7 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 @Module({
+  controllers: [HealthController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
