@@ -225,7 +225,9 @@ model Notification {
   id        String           @id @default(cuid())
   userId    String
   title     String
+  titleI18n Json?
   body      String
+  bodyI18n  Json?
   type      NotificationType
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())

@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateShopItemDto {
   @IsString()
@@ -10,6 +10,14 @@ export class CreateShopItemDto {
   @IsNotEmpty()
   @MaxLength(1000)
   description!: string;
+
+  @IsOptional()
+  @IsObject()
+  nameI18n?: Record<string, string>;
+
+  @IsOptional()
+  @IsObject()
+  descriptionI18n?: Record<string, string>;
 
   @IsOptional()
   @IsString()

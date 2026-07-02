@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { AuditService } from '../audit/audit.service';
+import { normalizeLocalizedText } from '../common/i18n/localized-content';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { resolveStaffScope } from '../common/utils/staff-scope.util';
 import { PrismaService } from '../prisma/prisma.service';
@@ -75,10 +76,14 @@ export class EventsService {
       }
     }
 
+    const titleI18n = normalizeLocalizedText(dto.titleI18n);
+    const descriptionI18n = normalizeLocalizedText(dto.descriptionI18n);
     const event = await this.prisma.event.create({
       data: {
         title: dto.title.trim(),
         description: dto.description.trim(),
+        ...(titleI18n ? { titleI18n } : {}),
+        ...(descriptionI18n ? { descriptionI18n } : {}),
         facultyId: dto.facultyId,
         startAt: new Date(dto.startAt),
         endAt: dto.endAt ? new Date(dto.endAt) : null,

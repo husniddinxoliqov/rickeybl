@@ -76,7 +76,7 @@ export default function DashboardPage() {
         {notifications.length ? (
           <ul>
             {notifications.map((notification) => (
-              <li key={notification.id}>{notification.title}</li>
+              <li key={notification.id}>{localize(notification.titleI18n, notification.title)}</li>
             ))}
           </ul>
         ) : (

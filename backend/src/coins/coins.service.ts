@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CoinTransactionType, NotificationType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { localizedText } from '../common/i18n/localized-content';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -84,6 +85,14 @@ export class CoinsService {
       'Coins awarded',
       `You received ${dto.amount} coins: ${dto.reason}`,
       NotificationType.REWARD,
+      {
+        titleI18n: localizedText('Coin berildi', 'Начислены coin', 'Coins awarded'),
+        bodyI18n: localizedText(
+          `Sizga ${dto.amount} coin berildi: ${dto.reason}`,
+          `Вам начислено ${dto.amount} coin: ${dto.reason}`,
+          `You received ${dto.amount} coins: ${dto.reason}`,
+        ),
+      },
     );
 
     return transaction;

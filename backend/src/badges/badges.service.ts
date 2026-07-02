@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { localizedText, normalizeLocalizedText } from '../common/i18n/localized-content';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
@@ -43,10 +44,14 @@ export class BadgesService {
   }
 
   async createBadge(actorId: string, dto: CreateBadgeDto) {
+    const nameI18n = normalizeLocalizedText(dto.nameI18n);
+    const descriptionI18n = normalizeLocalizedText(dto.descriptionI18n);
     const badge = await this.prisma.badge.create({
       data: {
         name: dto.name.trim(),
         description: dto.description.trim(),
+        ...(nameI18n ? { nameI18n } : {}),
+        ...(descriptionI18n ? { descriptionI18n } : {}),
         iconUrl: dto.iconUrl,
         requiredCoins: dto.requiredCoins ?? 0,
         isActive: dto.isActive ?? true,
@@ -118,6 +123,14 @@ export class BadgesService {
       'New badge awarded',
       `You received the ${badge.name} badge.`,
       NotificationType.REWARD,
+      {
+        titleI18n: localizedText('Yangi badge berildi', 'Выдан новый badge', 'New badge awarded'),
+        bodyI18n: localizedText(
+          `Siz ${badge.name} badge'ini oldingiz.`,
+          `Вы получили badge ${badge.name}.`,
+          `You received the ${badge.name} badge.`,
+        ),
+      },
     );
 
     return award;

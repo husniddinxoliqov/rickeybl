@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { NotificationType, Prisma, StudentStatus } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { localizedText } from '../common/i18n/localized-content';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
@@ -92,6 +93,27 @@ export class StudentsService {
         ? 'Your SamDU profile has been approved automatically.'
         : 'Your SamDU profile has been submitted for staff review.',
       shouldAutoApprove ? NotificationType.INFO : NotificationType.WARNING,
+      shouldAutoApprove
+        ? {
+            titleI18n: localizedText('Profil tasdiqlandi', 'Профиль подтверждён', 'Profile approved'),
+            bodyI18n: localizedText(
+              'SamDU profilingiz avtomatik tasdiqlandi.',
+              'Ваш профиль SamDU был подтверждён автоматически.',
+              'Your SamDU profile has been approved automatically.',
+            ),
+          }
+        : {
+            titleI18n: localizedText(
+              "Profil ko'rib chiqilmoqda",
+              'Профиль ожидает проверки',
+              'Profile pending review',
+            ),
+            bodyI18n: localizedText(
+              'SamDU profilingiz xodimlar ko‘rib chiqishi uchun yuborildi.',
+              'Ваш профиль SamDU отправлен на проверку сотрудникам.',
+              'Your SamDU profile has been submitted for staff review.',
+            ),
+          },
     );
 
     return profile;
@@ -158,6 +180,14 @@ export class StudentsService {
       'Profile approved',
       'Your student profile has been approved by SamDU staff.',
       NotificationType.INFO,
+      {
+        titleI18n: localizedText('Profil tasdiqlandi', 'Профиль подтверждён', 'Profile approved'),
+        bodyI18n: localizedText(
+          'Talaba profilingiz SamDU xodimlari tomonidan tasdiqlandi.',
+          'Ваш студенческий профиль подтверждён сотрудниками SamDU.',
+          'Your student profile has been approved by SamDU staff.',
+        ),
+      },
     );
 
     return updated;
@@ -198,6 +228,14 @@ export class StudentsService {
       'Profile rejected',
       'Your student profile needs manual correction before approval.',
       NotificationType.WARNING,
+      {
+        titleI18n: localizedText('Profil rad etildi', 'Профиль отклонён', 'Profile rejected'),
+        bodyI18n: localizedText(
+          'Talaba profilingiz tasdiqlanishidan oldin qo‘lda tuzatishni talab qiladi.',
+          'Ваш студенческий профиль требует ручной корректировки перед подтверждением.',
+          'Your student profile needs manual correction before approval.',
+        ),
+      },
     );
 
     return updated;
