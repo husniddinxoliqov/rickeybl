@@ -8,7 +8,6 @@ COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY prisma ./prisma
 COPY src ./src
 RUN npx prisma generate && npx tsc -p tsconfig.build.json
-RUN ls -la dist/ && ls dist/main.js
 
 FROM node:20-alpine AS runner
 WORKDIR /app
