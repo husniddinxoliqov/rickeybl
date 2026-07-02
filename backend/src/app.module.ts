@@ -23,6 +23,20 @@ const BOT_TOKEN_PLACEHOLDERS = new Set([
   'xxx',
 ]);
 
+const ROOT_PASSWORD_PLACEHOLDERS = new Set([
+  'your_root_password_here',
+  'change_this_password',
+  'password',
+  'changeme',
+]);
+
+const WEAK_JWT_SECRETS = new Set([
+  'your_jwt_secret_here_change_in_production',
+  'secret',
+  'changeme',
+  'jwt_secret',
+]);
+
 function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const nodeEnv = env.NODE_ENV ?? 'development';
   const portValue = env.PORT?.trim() || '3000';
@@ -39,6 +53,27 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     if (!botToken || BOT_TOKEN_PLACEHOLDERS.has(botToken)) {
       throw new Error(
         'Invalid BOT_TOKEN: set a real Telegram bot token before running in production.',
+      );
+    }
+
+    const databaseUrl = env.DATABASE_URL?.trim();
+    if (!databaseUrl) {
+      throw new Error(
+        'DATABASE_URL is not set. Provide a valid PostgreSQL connection string before running in production.',
+      );
+    }
+
+    const jwtSecret = env.JWT_SECRET?.trim() ?? '';
+    if (WEAK_JWT_SECRETS.has(jwtSecret) || jwtSecret.length < 32) {
+      throw new Error(
+        'JWT_SECRET is weak or uses a default value. Set a strong secret (≥ 32 chars) before running in production.',
+      );
+    }
+
+    const rootPassword = env.ROOT_PASSWORD?.trim();
+    if (!rootPassword || ROOT_PASSWORD_PLACEHOLDERS.has(rootPassword)) {
+      throw new Error(
+        'ROOT_PASSWORD is not set or uses a placeholder. Set a strong password before running in production.',
       );
     }
   }
