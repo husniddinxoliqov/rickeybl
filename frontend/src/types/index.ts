@@ -157,7 +157,9 @@ export interface Notification {
   id: string;
   userId: string;
   title: string;
+  titleI18n?: I18nMap | null;
   body: string;
+  bodyI18n?: I18nMap | null;
   type: NotificationType;
   isRead: boolean;
   createdAt: string;
@@ -196,4 +198,3 @@ export interface AdminStats {
   activeOrders: number;
   coinsAwarded: number;
 }
-

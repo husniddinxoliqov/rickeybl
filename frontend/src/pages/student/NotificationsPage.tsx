@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n';
 import { Notification } from '../../types';
 
 export default function NotificationsPage() {
-  const { t } = useI18n();
+  const { t, localize } = useI18n();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const load = async () => {
@@ -28,8 +28,8 @@ export default function NotificationsPage() {
         {notifications.length ? (
           notifications.map((notification) => (
             <article key={notification.id} style={{ padding: 16, border: '1px solid #e5e7eb', borderRadius: 12 }}>
-              <strong>{notification.title}</strong>
-              <p>{notification.body}</p>
+              <strong>{localize(notification.titleI18n, notification.title)}</strong>
+              <p>{localize(notification.bodyI18n, notification.body)}</p>
               {!notification.isRead ? (
                 <button onClick={() => void markRead(notification.id)}>
                   {t('student.notifications.markRead')}

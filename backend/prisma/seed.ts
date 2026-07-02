@@ -157,6 +157,41 @@ async function main() {
     }
   }
 
+  const events = [
+    {
+      title: 'Welcome Orientation',
+      description: 'Kick off the semester with an intro session for new students.',
+      titleI18n: {
+        uz: 'Xush kelibsiz orientatsiyasi',
+        ru: 'Вводная встреча для новых студентов',
+        en: 'Welcome Orientation',
+      },
+      descriptionI18n: {
+        uz: 'Yangi talabalar uchun semestrni tanishtiruv uchrashuvi bilan boshlang.',
+        ru: 'Начните семестр с вводной встречи для новых студентов.',
+        en: 'Kick off the semester with an intro session for new students.',
+      },
+      facultyId: faculty.id,
+      startAt: new Date('2026-09-01T09:00:00.000Z'),
+      endAt: new Date('2026-09-01T11:00:00.000Z'),
+      createdBy: rootUser.id,
+      isPublished: true,
+      coinsReward: 25,
+    },
+  ];
+
+  for (const event of events) {
+    const existing = await prisma.event.findFirst({ where: { title: event.title } });
+    if (existing) {
+      await prisma.event.update({
+        where: { id: existing.id },
+        data: event,
+      });
+    } else {
+      await prisma.event.create({ data: event });
+    }
+  }
+
   console.log(`Seed complete. Root user: ${rootUser.username}`);
 }
 
@@ -168,4 +203,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

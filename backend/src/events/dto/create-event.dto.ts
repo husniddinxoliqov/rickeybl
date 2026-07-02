@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -10,6 +10,14 @@ export class CreateEventDto {
   @IsNotEmpty()
   @MaxLength(2000)
   description!: string;
+
+  @IsOptional()
+  @IsObject()
+  titleI18n?: Record<string, string>;
+
+  @IsOptional()
+  @IsObject()
+  descriptionI18n?: Record<string, string>;
 
   @IsOptional()
   @IsString()

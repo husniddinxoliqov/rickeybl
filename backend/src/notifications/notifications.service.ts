@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
+import { LocalizedText, normalizeLocalizedText } from '../common/i18n/localized-content';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -28,12 +29,26 @@ export class NotificationsService {
     });
   }
 
-  createNotification(userId: string, title: string, body: string, type: NotificationType) {
+  createNotification(
+    userId: string,
+    title: string,
+    body: string,
+    type: NotificationType,
+    localized?: {
+      titleI18n?: LocalizedText;
+      bodyI18n?: LocalizedText;
+    },
+  ) {
+    const titleI18n = normalizeLocalizedText(localized?.titleI18n);
+    const bodyI18n = normalizeLocalizedText(localized?.bodyI18n);
+
     return this.prisma.notification.create({
       data: {
         userId,
         title,
+        ...(titleI18n ? { titleI18n } : {}),
         body,
+        ...(bodyI18n ? { bodyI18n } : {}),
         type,
       },
     });
