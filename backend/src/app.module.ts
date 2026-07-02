@@ -28,8 +28,10 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const portValue = (env.PORT ?? '3000').trim();
   const port = Number(portValue);
 
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('Invalid PORT: expected an integer between 1 and 65535.');
+  if (Number.isNaN(port) || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(
+      `Invalid PORT value "${portValue}": expected an integer between 1 and 65535.`,
+    );
   }
 
   if (nodeEnv === 'production') {
