@@ -16,11 +16,18 @@ import ShopPage from './pages/student/ShopPage';
 import ApprovalsPage from './pages/staff/ApprovalsPage';
 import StaffAnnouncementsPage from './pages/staff/StaffAnnouncementsPage';
 import StaffAuditPage from './pages/staff/StaffAuditPage';
+import StaffBadgesPage from './pages/staff/StaffBadgesPage';
+import StaffEventsPage from './pages/staff/StaffEventsPage';
 import OrdersPage from './pages/staff/OrdersPage';
 import StaffDashboardPage from './pages/staff/StaffDashboardPage';
 import AdminAnnouncementsPage from './pages/root/AdminAnnouncementsPage';
 import AdminAuditPage from './pages/root/AdminAuditPage';
+import AdminBadgesPage from './pages/root/AdminBadgesPage';
 import AdminDashboardPage from './pages/root/AdminDashboardPage';
+import AdminEventsPage from './pages/root/AdminEventsPage';
+import AdminGroupsPage from './pages/root/AdminGroupsPage';
+import AdminMorePage from './pages/root/AdminMorePage';
+import AdminShopPage from './pages/root/AdminShopPage';
 import AdminUsersPage from './pages/root/AdminUsersPage';
 
 function AppShell({ role, children }: { role: 'STUDENT' | 'STAFF' | 'ROOT'; children: ReactNode }) {
@@ -39,7 +46,7 @@ function AppShell({ role, children }: { role: 'STUDENT' | 'STAFF' | 'ROOT'; chil
 }
 
 export default function App() {
-  const { user, isLoading, error, studentStatus, loginWithCredentials, loginWithTelegram } = useAuth();
+  const { user, isLoading, error, studentStatus, loginWithCredentials, loginWithTelegram, refreshProfile } = useAuth();
 
   if (isLoading || !user) {
     return (
@@ -53,7 +60,7 @@ export default function App() {
   }
 
   if (user.role === 'STUDENT' && studentStatus !== 'ACTIVE') {
-    return <PendingApprovalPage hasProfile={Boolean(user.studentProfile)} />;
+    return <PendingApprovalPage hasProfile={Boolean(user.studentProfile)} refreshProfile={refreshProfile} />;
   }
 
   if (user.role === 'ROOT') {
@@ -62,8 +69,13 @@ export default function App() {
         <Routes>
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/shop" element={<AdminShopPage />} />
+          <Route path="/admin/events" element={<AdminEventsPage />} />
+          <Route path="/admin/badges" element={<AdminBadgesPage />} />
+          <Route path="/admin/groups" element={<AdminGroupsPage />} />
           <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
           <Route path="/admin/audit" element={<AdminAuditPage />} />
+          <Route path="/admin/more" element={<AdminMorePage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </AppShell>
@@ -77,6 +89,8 @@ export default function App() {
           <Route path="/staff" element={<StaffDashboardPage />} />
           <Route path="/staff/approvals" element={<ApprovalsPage />} />
           <Route path="/staff/orders" element={<OrdersPage />} />
+          <Route path="/staff/badges" element={<StaffBadgesPage />} />
+          <Route path="/staff/events" element={<StaffEventsPage />} />
           <Route path="/staff/announcements" element={<StaffAnnouncementsPage />} />
           <Route path="/staff/audit" element={<StaffAuditPage />} />
           <Route path="*" element={<Navigate to="/staff" replace />} />

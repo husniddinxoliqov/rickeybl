@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -35,5 +35,12 @@ export class AnnouncementsController {
     @Body() dto: UpdateAnnouncementDto,
   ) {
     return this.announcementsService.update(actor, id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STAFF, UserRole.ROOT)
+  delete(@CurrentUser() actor: AuthenticatedUser, @Param('id') id: string) {
+    return this.announcementsService.delete(actor, id);
   }
 }

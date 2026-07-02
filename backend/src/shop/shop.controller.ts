@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -7,6 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateShopItemDto } from './dto/create-shop-item.dto';
+import { UpdateShopItemDto } from './dto/update-shop-item.dto';
 import { ShopService } from './shop.service';
 
 @Controller('shop')
@@ -24,6 +25,24 @@ export class ShopController {
   @Roles(UserRole.ROOT)
   createItem(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateShopItemDto) {
     return this.shopService.createItem(user.id, dto);
+  }
+
+  @Put('items/:id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ROOT)
+  updateItem(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateShopItemDto,
+  ) {
+    return this.shopService.updateItem(user.id, id, dto);
+  }
+
+  @Delete('items/:id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ROOT)
+  deleteItem(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.shopService.deleteItem(user.id, id);
   }
 
   @Post('orders')

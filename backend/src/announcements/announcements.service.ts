@@ -119,6 +119,23 @@ export class AnnouncementsService {
     return updated;
   }
 
+  async delete(actor: AuthenticatedUser, id: string) {
+    const existing = await this.prisma.announcement.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Announcement not found');
+    }
+
+    // STAFF can only delete their own announcements, ROOT can delete any
+    if (actor.role === UserRole.STAFF && existing.createdBy !== actor.id) {
+      throw new ForbiddenException('You can only delete your own announcements');
+    }
+
+    await this.prisma.announcement.delete({ where: { id } });
+
+    await this.auditService.log(actor.id, 'announcement.deleted', 'Announcement', id);
+    return { success: true };
+  }
+
   private assertCanWrite(actor: AuthenticatedUser, facultyId?: string, groupId?: string) {
     if (actor.role === UserRole.ROOT) {
       return;

@@ -19,6 +19,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateShopItemDto } from './dto/create-shop-item.dto';
+import { UpdateShopItemDto } from './dto/update-shop-item.dto';
 
 const orderInclude = {
   item: true,
@@ -75,6 +76,54 @@ export class ShopService {
 
     await this.auditService.log(actorId, 'shop.item_created', 'ShopItem', item.id, null, {
       name: item.name,
+    });
+
+    return item;
+  }
+
+  async updateItem(actorId: string, id: string, dto: UpdateShopItemDto) {
+    const existing = await this.prisma.shopItem.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Shop item not found');
+    }
+
+    const nameI18n = dto.nameI18n !== undefined ? normalizeLocalizedText(dto.nameI18n) : undefined;
+    const descriptionI18n = dto.descriptionI18n !== undefined ? normalizeLocalizedText(dto.descriptionI18n) : undefined;
+
+    const item = await this.prisma.shopItem.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.description !== undefined ? { description: dto.description.trim() } : {}),
+        ...(nameI18n !== undefined ? { nameI18n: nameI18n || undefined } : {}),
+        ...(descriptionI18n !== undefined ? { descriptionI18n: descriptionI18n || undefined } : {}),
+        ...(dto.imageUrl !== undefined ? { imageUrl: dto.imageUrl } : {}),
+        ...(dto.coinCost !== undefined ? { coinCost: dto.coinCost } : {}),
+        ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+
+    await this.auditService.log(actorId, 'shop.item_updated', 'ShopItem', item.id, { name: existing.name }, {
+      name: item.name,
+    });
+
+    return item;
+  }
+
+  async deleteItem(actorId: string, id: string) {
+    const existing = await this.prisma.shopItem.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Shop item not found');
+    }
+
+    const item = await this.prisma.shopItem.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    await this.auditService.log(actorId, 'shop.item_deleted', 'ShopItem', item.id, { isActive: true }, {
+      isActive: false,
     });
 
     return item;

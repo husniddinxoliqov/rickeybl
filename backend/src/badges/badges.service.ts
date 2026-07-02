@@ -18,6 +18,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AwardBadgeDto } from './dto/award-badge.dto';
 import { CreateBadgeDto } from './dto/create-badge.dto';
+import { UpdateBadgeDto } from './dto/update-badge.dto';
 
 @Injectable()
 export class BadgesService {
@@ -64,6 +65,53 @@ export class BadgesService {
 
     await this.auditService.log(actorId, 'badge.created', 'Badge', badge.id, null, {
       name: badge.name,
+    });
+
+    return badge;
+  }
+
+  async updateBadge(actorId: string, id: string, dto: UpdateBadgeDto) {
+    const existing = await this.prisma.badge.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Badge not found');
+    }
+
+    const nameI18n = dto.nameI18n !== undefined ? normalizeLocalizedText(dto.nameI18n) : undefined;
+    const descriptionI18n = dto.descriptionI18n !== undefined ? normalizeLocalizedText(dto.descriptionI18n) : undefined;
+
+    const badge = await this.prisma.badge.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.description !== undefined ? { description: dto.description.trim() } : {}),
+        ...(nameI18n !== undefined ? { nameI18n: nameI18n || undefined } : {}),
+        ...(descriptionI18n !== undefined ? { descriptionI18n: descriptionI18n || undefined } : {}),
+        ...(dto.iconUrl !== undefined ? { iconUrl: dto.iconUrl } : {}),
+        ...(dto.requiredCoins !== undefined ? { requiredCoins: dto.requiredCoins } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+
+    await this.auditService.log(actorId, 'badge.updated', 'Badge', badge.id, { name: existing.name }, {
+      name: badge.name,
+    });
+
+    return badge;
+  }
+
+  async deleteBadge(actorId: string, id: string) {
+    const existing = await this.prisma.badge.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Badge not found');
+    }
+
+    const badge = await this.prisma.badge.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    await this.auditService.log(actorId, 'badge.deleted', 'Badge', badge.id, { isActive: true }, {
+      isActive: false,
     });
 
     return badge;

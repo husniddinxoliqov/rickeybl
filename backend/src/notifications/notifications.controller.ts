@@ -14,6 +14,11 @@ export class NotificationsController {
     return this.notificationsService.getMyNotifications(user.id);
   }
 
+  @Post('read-all')
+  markAllRead(@CurrentUser() user: AuthenticatedUser) {
+    return this.notificationsService.markAllRead(user.id);
+  }
+
   @Post(':id/read')
   markRead(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.notificationsService.markRead(user.id, id);

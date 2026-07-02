@@ -17,15 +17,16 @@ const navItems: Record<UserRole, Array<{ to: string; labelKey: string }>> = {
   STAFF: [
     { to: '/staff', labelKey: 'nav.staff.overview' },
     { to: '/staff/approvals', labelKey: 'nav.staff.approvals' },
+    { to: '/staff/badges', labelKey: 'nav.staff.badges' },
+    { to: '/staff/events', labelKey: 'nav.staff.events' },
     { to: '/staff/orders', labelKey: 'nav.staff.orders' },
-    { to: '/staff/announcements', labelKey: 'nav.staff.announcements' },
-    { to: '/staff/audit', labelKey: 'nav.staff.audit' },
   ],
   ROOT: [
     { to: '/admin', labelKey: 'nav.root.overview' },
     { to: '/admin/users', labelKey: 'nav.root.users' },
-    { to: '/admin/announcements', labelKey: 'nav.root.announcements' },
-    { to: '/admin/audit', labelKey: 'nav.root.audit' },
+    { to: '/admin/shop', labelKey: 'nav.root.shop' },
+    { to: '/admin/events', labelKey: 'nav.root.events' },
+    { to: '/admin/more', labelKey: 'nav.root.more' },
   ],
 };
 
@@ -54,6 +55,7 @@ export function BottomNav({ role }: BottomNavProps) {
             color: isActive ? '#0f766e' : '#6b7280',
             textDecoration: 'none',
             fontWeight: isActive ? 700 : 500,
+            fontSize: 12,
           })}
         >
           {t(item.labelKey)}
