@@ -29,3 +29,11 @@ export function normalizeLocalizedText(input?: Record<string, unknown> | null): 
 
   return Object.keys(normalized).length ? normalized : undefined;
 }
+
+export function getLocalizedText(input: unknown, locale: AppLocale, fallback: string): string {
+  const normalized = normalizeLocalizedText(
+    input && typeof input === 'object' ? (input as Record<string, unknown>) : undefined,
+  );
+
+  return normalized?.[locale] ?? normalized?.en ?? normalized?.uz ?? fallback;
+}

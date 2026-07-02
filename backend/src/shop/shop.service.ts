@@ -7,7 +7,11 @@ import {
 } from '@nestjs/common';
 import { CoinTransactionType, NotificationType, Prisma, ShopOrderStatus, UserRole } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
-import { localizedText, normalizeLocalizedText } from '../common/i18n/localized-content';
+import {
+  getLocalizedText,
+  localizedText,
+  normalizeLocalizedText,
+} from '../common/i18n/localized-content';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
@@ -138,8 +142,8 @@ export class ShopService {
       {
         titleI18n: localizedText("Do'kon buyurtmasi yaratildi", 'Заказ магазина создан', 'Shop order created'),
         bodyI18n: localizedText(
-          `${order.item.name} uchun buyurtmangiz tasdiqlanishini kutmoqda.`,
-          `Ваш заказ на ${order.item.name} ожидает подтверждения.`,
+          `${getLocalizedText(order.item.nameI18n, 'uz', order.item.name)} uchun buyurtmangiz tasdiqlanishini kutmoqda.`,
+          `Ваш заказ на ${getLocalizedText(order.item.nameI18n, 'ru', order.item.name)} ожидает подтверждения.`,
           `Your order for ${order.item.name} is pending approval.`,
         ),
       },
@@ -214,8 +218,8 @@ export class ShopService {
       {
         titleI18n: localizedText('Buyurtma tasdiqlandi', 'Заказ подтверждён', 'Order approved'),
         bodyI18n: localizedText(
-          `${order.item.name} uchun buyurtmangiz tasdiqlandi.`,
-          `Ваш заказ на ${order.item.name} подтверждён.`,
+          `${getLocalizedText(order.item.nameI18n, 'uz', order.item.name)} uchun buyurtmangiz tasdiqlandi.`,
+          `Ваш заказ на ${getLocalizedText(order.item.nameI18n, 'ru', order.item.name)} подтверждён.`,
           `Your order for ${order.item.name} has been approved.`,
         ),
       },
@@ -336,8 +340,8 @@ export class ShopService {
       {
         titleI18n: localizedText('Buyurtma bekor qilindi', 'Заказ отменён', 'Order cancelled'),
         bodyI18n: localizedText(
-          `${order.item.name} uchun buyurtmangiz bekor qilindi va coin qaytarildi.`,
-          `Ваш заказ на ${order.item.name} отменён, coin возвращены.`,
+          `${getLocalizedText(order.item.nameI18n, 'uz', order.item.name)} uchun buyurtmangiz bekor qilindi va coin qaytarildi.`,
+          `Ваш заказ на ${getLocalizedText(order.item.nameI18n, 'ru', order.item.name)} отменён, coin возвращены.`,
           `Your order for ${order.item.name} was cancelled and refunded.`,
         ),
       },

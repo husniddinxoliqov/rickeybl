@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
-import { localizedText, normalizeLocalizedText } from '../common/i18n/localized-content';
+import {
+  getLocalizedText,
+  localizedText,
+  normalizeLocalizedText,
+} from '../common/i18n/localized-content';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
@@ -126,8 +130,8 @@ export class BadgesService {
       {
         titleI18n: localizedText('Yangi badge berildi', 'Выдан новый badge', 'New badge awarded'),
         bodyI18n: localizedText(
-          `Siz ${badge.name} badge'ini oldingiz.`,
-          `Вы получили badge ${badge.name}.`,
+          `Siz ${getLocalizedText(badge.nameI18n, 'uz', badge.name)} badge'ini oldingiz.`,
+          `Вы получили badge ${getLocalizedText(badge.nameI18n, 'ru', badge.name)}.`,
           `You received the ${badge.name} badge.`,
         ),
       },
