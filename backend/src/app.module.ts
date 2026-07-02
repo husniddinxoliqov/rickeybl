@@ -64,6 +64,11 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     }
 
     const jwtSecret = env.JWT_SECRET?.trim() ?? '';
+    if (!jwtSecret) {
+      throw new Error(
+        'JWT_SECRET is not set. Provide a strong secret (≥ 32 chars) before running in production.',
+      );
+    }
     if (WEAK_JWT_SECRETS.has(jwtSecret) || jwtSecret.length < 32) {
       throw new Error(
         'JWT_SECRET is weak or uses a default value. Set a strong secret (≥ 32 chars) before running in production.',
