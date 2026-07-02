@@ -25,7 +25,7 @@ const BOT_TOKEN_PLACEHOLDERS = new Set([
 
 function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const nodeEnv = env.NODE_ENV ?? 'development';
-  const portValue = (env.PORT ?? '3000').trim();
+  const portValue = env.PORT?.trim() || '3000';
   const port = Number(portValue);
 
   if (Number.isNaN(port) || !Number.isInteger(port) || port < 1 || port > 65535) {
