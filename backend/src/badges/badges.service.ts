@@ -128,10 +128,10 @@ export class BadgesService {
       `You received the ${badge.name} badge.`,
       NotificationType.REWARD,
       {
-        titleI18n: localizedText('Yangi badge berildi', 'Выдан новый badge', 'New badge awarded'),
+        titleI18n: localizedText('Yangi nishon berildi', 'Выдан новый значок', 'New badge awarded'),
         bodyI18n: localizedText(
-          `Siz ${getLocalizedText(badge.nameI18n, 'uz', badge.name)} badge'ini oldingiz.`,
-          `Вы получили badge ${getLocalizedText(badge.nameI18n, 'ru', badge.name)}.`,
+          `Siz ${getLocalizedText(badge.nameI18n, 'uz', badge.name)} nishonini oldingiz.`,
+          `Вы получили значок ${getLocalizedText(badge.nameI18n, 'ru', badge.name)}.`,
           `You received the ${badge.name} badge.`,
         ),
       },

@@ -35,5 +35,6 @@ export function getLocalizedText(input: unknown, locale: AppLocale, fallback: st
     input && typeof input === 'object' ? (input as Record<string, unknown>) : undefined,
   );
 
+  // Keep backend interpolation aligned with the frontend DB-content fallback order.
   return normalized?.[locale] ?? normalized?.en ?? normalized?.uz ?? fallback;
 }
