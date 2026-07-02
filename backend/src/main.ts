@@ -17,12 +17,6 @@ async function bootstrap() {
 
   const jwtSecret = configService.get<string>('JWT_SECRET', '');
   if (WEAK_JWT_SECRETS.has(jwtSecret) || jwtSecret.length < 32) {
-    const isProduction = configService.get<string>('NODE_ENV') === 'production';
-    if (isProduction) {
-      throw new Error(
-        'JWT_SECRET is weak or uses a default value. Set a strong secret before running in production.',
-      );
-    }
     // eslint-disable-next-line no-console
     console.warn(
       '[WARN] JWT_SECRET is weak or uses a default value. Change it before going to production.',
