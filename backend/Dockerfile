@@ -13,8 +13,6 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN apk add --no-cache wget
-
 COPY package.json ./
 RUN npm install --omit=dev
 
