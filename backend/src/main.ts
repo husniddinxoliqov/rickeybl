@@ -14,7 +14,6 @@ const WEAK_JWT_SECRETS = new Set([
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
 
   const jwtSecret = configService.get<string>('JWT_SECRET', '');
   if (WEAK_JWT_SECRETS.has(jwtSecret) || jwtSecret.length < 32) {
@@ -31,8 +30,6 @@ async function bootstrap() {
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean);
-  } else if (corsOrigin === '*' && nodeEnv === 'production') {
-    throw new Error('CORS_ORIGIN cannot be "*" in production.');
   }
 
   app.use(helmet());
