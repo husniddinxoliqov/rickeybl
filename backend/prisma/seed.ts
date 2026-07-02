@@ -3,12 +3,17 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const DEFAULT_ROOT_PASSWORD = 'change_this_password';
+
 /**
  * Pass SEED_RESET=true as an env variable to wipe all pilot data before
  * seeding fresh.  Useful when transitioning from pilot to production.
  *
  * WARNING: This removes ALL students, events, shop orders, coins, badges,
  * notifications and audit logs.  Users themselves are NOT deleted.
+ *
+ * In production (NODE_ENV=production) SEED_RESET is blocked unless you also
+ * set ALLOW_PROD_RESET=true.  This prevents accidental data loss.
  */
 async function resetPilotData() {
   console.log('⚠  SEED_RESET=true — wiping pilot data…');
@@ -27,12 +32,30 @@ async function resetPilotData() {
 }
 
 async function main() {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   if (process.env.SEED_RESET === 'true') {
+    if (isProduction && process.env.ALLOW_PROD_RESET !== 'true') {
+      console.error(
+        '🚫  SEED_RESET=true is not allowed in production.\n' +
+        '    Set ALLOW_PROD_RESET=true alongside SEED_RESET=true only if you\n' +
+        '    are absolutely sure you want to wipe production data.',
+      );
+      process.exit(1);
+    }
     await resetPilotData();
   }
 
   const username = process.env.ROOT_USERNAME ?? 'admin';
-  const rawPassword = process.env.ROOT_PASSWORD ?? 'change_this_password';
+  const rawPassword = process.env.ROOT_PASSWORD ?? DEFAULT_ROOT_PASSWORD;
+
+  if (isProduction && rawPassword === DEFAULT_ROOT_PASSWORD) {
+    console.error(
+      '🚫  ROOT_PASSWORD is not set or uses the default placeholder.\n' +
+      '    Set a strong ROOT_PASSWORD before running the seed in production.',
+    );
+    process.exit(1);
+  }
   const passwordHash = await bcrypt.hash(rawPassword, 12);
 
   const rootUser = await prisma.user.upsert({
