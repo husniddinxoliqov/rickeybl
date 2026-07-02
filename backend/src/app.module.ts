@@ -15,11 +15,17 @@ import { ShopModule } from './shop/shop.module';
 import { StudentsModule } from './students/students.module';
 import { UsersModule } from './users/users.module';
 
-const BOT_TOKEN_PLACEHOLDERS = new Set(['your_telegram_bot_token']);
+const BOT_TOKEN_PLACEHOLDERS = new Set([
+  'your_telegram_bot_token',
+  'YOUR_BOT_TOKEN',
+  'placeholder',
+  'token',
+  'xxx',
+]);
 
 function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const nodeEnv = env.NODE_ENV ?? 'development';
-  const portValue = env.PORT ?? '3000';
+  const portValue = (env.PORT ?? '3000').trim();
   const port = Number(portValue);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
