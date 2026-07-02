@@ -1,10 +1,13 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { AuditService } from '../audit/audit.service';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
+import { resolveStaffScope } from '../common/utils/staff-scope.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 
@@ -53,11 +56,22 @@ export class EventsService {
     return event;
   }
 
-  async createEvent(actorId: string, dto: CreateEventDto) {
+  async createEvent(actor: AuthenticatedUser, dto: CreateEventDto) {
     if (dto.facultyId) {
       const faculty = await this.prisma.faculty.findUnique({ where: { id: dto.facultyId } });
       if (!faculty) {
         throw new NotFoundException('Faculty not found');
+      }
+
+      const scope = resolveStaffScope(actor);
+      if (scope) {
+        // Allow access if the staff has ANY assignment (faculty-wide OR
+        // group-specific) for this faculty, so a staff member scoped to
+        // a specific group within the faculty can still create faculty events.
+        const accessibleFacultyIds = (actor.staffAssignments ?? []).map((a) => a.facultyId);
+        if (!accessibleFacultyIds.includes(dto.facultyId)) {
+          throw new ForbiddenException('Faculty is not in your assigned scope');
+        }
       }
     }
 
@@ -68,7 +82,7 @@ export class EventsService {
         facultyId: dto.facultyId,
         startAt: new Date(dto.startAt),
         endAt: dto.endAt ? new Date(dto.endAt) : null,
-        createdBy: actorId,
+        createdBy: actor.id,
         isPublished: dto.isPublished ?? false,
         coinsReward: dto.coinsReward ?? 0,
       },
@@ -78,7 +92,7 @@ export class EventsService {
       },
     });
 
-    await this.auditService.log(actorId, 'event.created', 'Event', event.id, null, {
+    await this.auditService.log(actor.id, 'event.created', 'Event', event.id, null, {
       title: event.title,
     });
 

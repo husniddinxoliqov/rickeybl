@@ -264,6 +264,16 @@ export class ShopService {
         throw new ForbiddenException('You can only cancel your own orders');
       }
 
+      if (actor.role === UserRole.STAFF) {
+        const scope = resolveStaffScope(actor);
+        const studentProfile = existing.user.studentProfile;
+        if (scope && studentProfile) {
+          if (!isStudentInScope(scope, studentProfile.facultyId, studentProfile.groupId)) {
+            throw new ForbiddenException('Order is not in your assigned scope');
+          }
+        }
+      }
+
       if (existing.status === ShopOrderStatus.APPROVED && existing.item.stock !== -1) {
         await tx.shopItem.update({
           where: { id: existing.itemId },

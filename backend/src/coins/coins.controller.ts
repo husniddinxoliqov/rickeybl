@@ -31,6 +31,6 @@ export class CoinsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
   awardCoins(@CurrentUser() user: AuthenticatedUser, @Body() dto: AwardCoinsDto) {
-    return this.coinsService.awardCoins(user.id, dto);
+    return this.coinsService.awardCoins(user, dto);
   }
 }

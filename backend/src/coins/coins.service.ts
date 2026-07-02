@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CoinTransactionType, NotificationType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
+import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AwardCoinsDto } from './dto/award-coins.dto';
@@ -47,10 +49,20 @@ export class CoinsService {
     };
   }
 
-  async awardCoins(actorId: string, dto: AwardCoinsDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+  async awardCoins(actor: AuthenticatedUser, dto: AwardCoinsDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+      include: { studentProfile: true },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    const scope = resolveStaffScope(actor);
+    if (scope && user.studentProfile) {
+      if (!isStudentInScope(scope, user.studentProfile.facultyId, user.studentProfile.groupId)) {
+        throw new ForbiddenException('Target user is not in your assigned scope');
+      }
     }
 
     const transaction = await this.prisma.coinTransaction.create({
@@ -62,7 +74,7 @@ export class CoinsService {
       },
     });
 
-    await this.auditService.log(actorId, 'coins.awarded', 'CoinTransaction', transaction.id, null, {
+    await this.auditService.log(actor.id, 'coins.awarded', 'CoinTransaction', transaction.id, null, {
       amount: transaction.amount,
       userId: transaction.userId,
     });
