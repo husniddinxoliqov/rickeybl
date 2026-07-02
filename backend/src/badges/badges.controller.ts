@@ -35,6 +35,6 @@ export class BadgesController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
   awardBadge(@CurrentUser() user: AuthenticatedUser, @Body() dto: AwardBadgeDto) {
-    return this.badgesService.awardBadge(user.id, dto);
+    return this.badgesService.awardBadge(user, dto);
   }
 }

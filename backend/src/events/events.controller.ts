@@ -27,7 +27,7 @@ export class EventsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.STAFF, UserRole.ROOT)
   createEvent(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateEventDto) {
-    return this.eventsService.createEvent(user.id, dto);
+    return this.eventsService.createEvent(user, dto);
   }
 
   @Post(':id/register')

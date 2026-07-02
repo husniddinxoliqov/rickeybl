@@ -1,11 +1,14 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
+import { isStudentInScope, resolveStaffScope } from '../common/utils/staff-scope.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AwardBadgeDto } from './dto/award-badge.dto';
@@ -57,9 +60,12 @@ export class BadgesService {
     return badge;
   }
 
-  async awardBadge(actorId: string, dto: AwardBadgeDto) {
+  async awardBadge(actor: AuthenticatedUser, dto: AwardBadgeDto) {
     const [user, badge] = await Promise.all([
-      this.prisma.user.findUnique({ where: { id: dto.userId } }),
+      this.prisma.user.findUnique({
+        where: { id: dto.userId },
+        include: { studentProfile: true },
+      }),
       this.prisma.badge.findUnique({ where: { id: dto.badgeId } }),
     ]);
 
@@ -68,6 +74,13 @@ export class BadgesService {
     }
     if (!badge) {
       throw new NotFoundException('Badge not found');
+    }
+
+    const scope = resolveStaffScope(actor);
+    if (scope && user.studentProfile) {
+      if (!isStudentInScope(scope, user.studentProfile.facultyId, user.studentProfile.groupId)) {
+        throw new ForbiddenException('Target user is not in your assigned scope');
+      }
     }
 
     const existing = await this.prisma.userBadge.findFirst({
@@ -84,7 +97,7 @@ export class BadgesService {
       data: {
         userId: dto.userId,
         badgeId: dto.badgeId,
-        awardedBy: actorId,
+        awardedBy: actor.id,
         note: dto.note,
       },
       include: {
@@ -95,7 +108,7 @@ export class BadgesService {
       },
     });
 
-    await this.auditService.log(actorId, 'badge.awarded', 'UserBadge', award.id, null, {
+    await this.auditService.log(actor.id, 'badge.awarded', 'UserBadge', award.id, null, {
       userId: dto.userId,
       badgeId: dto.badgeId,
     });
