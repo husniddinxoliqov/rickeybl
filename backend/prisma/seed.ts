@@ -47,6 +47,7 @@ async function main() {
   }
 
   const username = process.env.ROOT_USERNAME ?? 'admin';
+  const email = (process.env.ROOT_EMAIL ?? 'admin@example.local').toLowerCase().trim();
   const rawPassword = process.env.ROOT_PASSWORD ?? DEFAULT_ROOT_PASSWORD;
 
   if (isProduction && (!rawPassword.trim() || rawPassword === DEFAULT_ROOT_PASSWORD)) {
@@ -62,11 +63,13 @@ async function main() {
     where: { username },
     update: {
       role: UserRole.ROOT,
+      email,
       passwordHash,
       isActive: true,
     },
     create: {
       username,
+      email,
       role: UserRole.ROOT,
       passwordHash,
       isActive: true,

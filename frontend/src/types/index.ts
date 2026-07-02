@@ -55,6 +55,7 @@ export interface User {
   id: string;
   telegramId?: string | null;
   username: string;
+  email?: string | null;
   role: UserRole;
   isActive: boolean;
   createdAt?: string;
@@ -180,7 +181,24 @@ export interface AuditLog {
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
+  sessionId: string;
   user: User;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  titleI18n?: I18nMap | null;
+  bodyI18n?: I18nMap | null;
+  createdBy: string;
+  facultyId?: string | null;
+  groupId?: string | null;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+  creator?: Pick<User, 'id' | 'username' | 'role'>;
 }
 
 export interface PaginatedTransactions {

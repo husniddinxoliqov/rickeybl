@@ -4,6 +4,7 @@ export const publicUserBaseSelect = {
   id: true,
   telegramId: true,
   username: true,
+  email: true,
   role: true,
   isActive: true,
   createdAt: true,

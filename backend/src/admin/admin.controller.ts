@@ -7,6 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { AdminService } from './admin.service';
 import { CreateStaffAssignmentDto } from './dto/create-staff-assignment.dto';
+import { SetStaffCredentialsDto } from './dto/set-staff-credentials.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,5 +50,14 @@ export class AdminController {
     @Param('assignmentId') assignmentId: string,
   ) {
     return this.adminService.deleteStaffAssignment(actor.id, assignmentId);
+  }
+
+  @Post('staff/:userId/credentials')
+  setStaffCredentials(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('userId') userId: string,
+    @Body() dto: SetStaffCredentialsDto,
+  ) {
+    return this.adminService.setStaffCredentials(actor.id, userId, dto);
   }
 }

@@ -10,6 +10,7 @@ const navItems: Record<UserRole, Array<{ to: string; labelKey: string }>> = {
   STUDENT: [
     { to: '/', labelKey: 'nav.student.home' },
     { to: '/events', labelKey: 'nav.student.events' },
+    { to: '/announcements', labelKey: 'nav.student.announcements' },
     { to: '/shop', labelKey: 'nav.student.shop' },
     { to: '/notifications', labelKey: 'nav.student.alerts' },
   ],
@@ -17,10 +18,13 @@ const navItems: Record<UserRole, Array<{ to: string; labelKey: string }>> = {
     { to: '/staff', labelKey: 'nav.staff.overview' },
     { to: '/staff/approvals', labelKey: 'nav.staff.approvals' },
     { to: '/staff/orders', labelKey: 'nav.staff.orders' },
+    { to: '/staff/announcements', labelKey: 'nav.staff.announcements' },
+    { to: '/staff/audit', labelKey: 'nav.staff.audit' },
   ],
   ROOT: [
     { to: '/admin', labelKey: 'nav.root.overview' },
     { to: '/admin/users', labelKey: 'nav.root.users' },
+    { to: '/admin/announcements', labelKey: 'nav.root.announcements' },
     { to: '/admin/audit', labelKey: 'nav.root.audit' },
   ],
 };

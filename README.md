@@ -30,6 +30,7 @@ Backend environment values:
 - `JWT_SECRET`, `JWT_EXPIRES_IN`
 - `BOT_TOKEN`
 - `ROOT_USERNAME`, `ROOT_PASSWORD`
+- `ROOT_EMAIL`
 - `PORT`
 - `TEST_MODE`
 
@@ -52,7 +53,11 @@ Frontend environment values:
 
 ## Auth flows
 - `POST /api/auth/telegram` verifies Telegram WebApp `initData` with strict HMAC validation and 5-minute expiry.
-- `POST /api/auth/admin-login` authenticates the root user with bcrypt.
+- `POST /api/auth/admin-login` authenticates root by username+password (legacy).
+- `POST /api/auth/staff-login` authenticates staff by email+password.
+- `POST /api/auth/credential-login` authenticates staff/root by email+password.
+- `POST /api/auth/refresh` rotates refresh tokens and issues a new access token.
+- `POST /api/auth/logout` and `POST /api/auth/logout-all` revoke session(s).
 - `GET /api/auth/me` returns the authenticated user with student profile data.
 
 ## Key API domains
@@ -63,7 +68,9 @@ Frontend environment values:
 - `events`: publishing and registration
 - `shop`: items, orders, approvals, refunds
 - `notifications`: in-app notification center
+- `announcements`: student feed + staff/root publish flow
 - `admin`: root-only stats, users, audit logs
+- `audit`: root global logs + staff-scoped logs
 
 ## Docker
 `docker-compose.yml` starts PostgreSQL and the backend service. The backend container expects the NestJS app dependencies to be installed during image build via `backend/Dockerfile`.
@@ -71,5 +78,20 @@ Frontend environment values:
 ## Security notes
 - JWT payload contains only `sub`, `role`, and optional Telegram ID.
 - Role checks are enforced server-side with JWT and roles guards.
-- Audit logs are recorded for authentication, approvals, badge awards, coin actions, and shop order lifecycle changes.
+- Access tokens are short-lived and paired with refresh sessions (rotation + revoke).
+- Failed credential logins are tracked; repeated failures trigger temporary lockout.
+- Auth endpoints include in-memory request throttling.
+- Audit logs are recorded for authentication, approvals, announcements, badge awards, coin actions, and shop order lifecycle changes.
 - Test mode banner is controlled by `VITE_TEST_MODE`.
+
+## Internal test and release checklist (MVP)
+- Build validation:
+  - `cd backend && npx prisma generate && npm run build`
+  - `cd frontend && npm run build`
+- Pilot/prod deployment checks:
+  - set non-placeholder values for `BOT_TOKEN`, `JWT_SECRET`, `ROOT_USERNAME`, `ROOT_EMAIL`, `ROOT_PASSWORD` in production
+  - run seed only with explicit reset flags (`SEED_RESET`, `ALLOW_PROD_RESET`) when needed
+- Monitoring baseline:
+  - monitor authentication failures (`auth.login_failed`, `auth.login_locked`)
+  - monitor HTTP exception audit entries (`http.exception`)
+  - monitor excessive auth attempt responses (429)

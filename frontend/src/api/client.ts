@@ -2,6 +2,7 @@ import { getRequestLanguage, translateAppMessage } from '../i18n/config';
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 const TOKEN_STORAGE_KEY = 'samdu_access_token';
+const REFRESH_TOKEN_STORAGE_KEY = 'samdu_refresh_token';
 
 export class ApiError<T = unknown> extends Error {
   status: number;
@@ -28,18 +29,74 @@ const buildHeaders = (headers?: HeadersInit) => {
   };
 };
 
+async function tryRefreshToken(): Promise<boolean> {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+  if (!refreshToken) {
+    return false;
+  }
+
+  const response = await fetch(buildUrl('/api/auth/refresh'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept-Language': getRequestLanguage(),
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+    return false;
+  }
+
+  const payload = (await response.json()) as {
+    accessToken: string;
+    refreshToken: string;
+  };
+  localStorage.setItem(TOKEN_STORAGE_KEY, payload.accessToken);
+  localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, payload.refreshToken);
+  return true;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(buildUrl(path), {
+  let response = await fetch(buildUrl(path), {
     ...init,
     headers: buildHeaders(init.headers),
   });
+  let attemptedRefresh = false;
 
   const isJson = response.headers.get('content-type')?.includes('application/json');
   const payload = isJson ? await response.json() : null;
 
+  if (response.status === 401) {
+    attemptedRefresh = true;
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      response = await fetch(buildUrl(path), {
+        ...init,
+        headers: buildHeaders(init.headers),
+      });
+      const retriedJson = response.headers.get('content-type')?.includes('application/json');
+      const retriedPayload = retriedJson ? await response.json() : null;
+      if (response.ok) {
+        return retriedPayload as T;
+      }
+      const retriedMessage = retriedPayload?.message
+        ? Array.isArray(retriedPayload.message)
+          ? retriedPayload.message.join(', ')
+          : retriedPayload.message
+        : translateAppMessage(getRequestLanguage(), 'api.requestFailed', {
+            status: response.status,
+          });
+      throw new ApiError(retriedMessage, response.status, retriedPayload);
+    }
+  }
+
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && !attemptedRefresh) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     }
     const message = payload?.message
       ? Array.isArray(payload.message)
@@ -66,10 +123,19 @@ export const apiClient = {
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
     }),
+  delete: <T>(path: string) =>
+    request<T>(path, {
+      method: 'DELETE',
+    }),
 };
 
 export const authStorage = {
   getToken: () => localStorage.getItem(TOKEN_STORAGE_KEY),
+  getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY),
   setToken: (token: string) => localStorage.setItem(TOKEN_STORAGE_KEY, token),
-  clear: () => localStorage.removeItem(TOKEN_STORAGE_KEY),
+  setRefreshToken: (token: string) => localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token),
+  clear: () => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  },
 };

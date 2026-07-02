@@ -1,9 +1,11 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CoinTransactionType, ShopOrderStatus, StudentStatus, UserRole } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { AuditService } from '../audit/audit.service';
 import { publicUserBaseSelect } from '../common/selects/public-user.select';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStaffAssignmentDto } from './dto/create-staff-assignment.dto';
+import { SetStaffCredentialsDto } from './dto/set-staff-credentials.dto';
 
 @Injectable()
 export class AdminService {
@@ -141,5 +143,26 @@ export class AdminService {
       facultyId: assignment.facultyId,
       groupId: assignment.groupId,
     }, null);
+  }
+
+  async setStaffCredentials(actorId: string, staffUserId: string, dto: SetStaffCredentialsDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: staffUserId } });
+    if (!user || user.role !== UserRole.STAFF) {
+      throw new NotFoundException('Staff user not found');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const updated = await this.prisma.user.update({
+      where: { id: staffUserId },
+      data: {
+        email: dto.email.toLowerCase().trim(),
+        passwordHash,
+        failedLoginCount: 0,
+        lockedUntil: null,
+      },
+      select: publicUserBaseSelect,
+    });
+    await this.auditService.log(actorId, 'admin.staff_credentials_set', 'User', staffUserId);
+    return updated;
   }
 }

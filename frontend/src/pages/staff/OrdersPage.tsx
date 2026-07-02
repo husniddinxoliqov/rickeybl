@@ -35,6 +35,15 @@ export default function OrdersPage() {
     }
   };
 
+  const cancel = async (id: string) => {
+    try {
+      await apiClient.post(`/api/shop/orders/${id}/cancel`);
+      await load();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('common.error'));
+    }
+  };
+
   if (isLoading) {
     return (
       <section>
@@ -57,6 +66,9 @@ export default function OrdersPage() {
                 {order.user?.studentProfile?.fullName ?? order.user?.username}
               </p>
               <button onClick={() => void approve(order.id)}>{t('staff.orders.approve')}</button>
+              <button onClick={() => void cancel(order.id)} style={{ marginLeft: 8 }}>
+                {t('staff.orders.cancel')}
+              </button>
             </article>
           ))
         ) : (
