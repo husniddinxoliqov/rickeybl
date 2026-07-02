@@ -49,7 +49,7 @@ async function main() {
   const username = process.env.ROOT_USERNAME ?? 'admin';
   const rawPassword = process.env.ROOT_PASSWORD ?? DEFAULT_ROOT_PASSWORD;
 
-  if (isProduction && rawPassword === DEFAULT_ROOT_PASSWORD) {
+  if (isProduction && (!rawPassword.trim() || rawPassword === DEFAULT_ROOT_PASSWORD)) {
     console.error(
       '🚫  ROOT_PASSWORD is not set or uses the default placeholder.\n' +
       '    Set a strong ROOT_PASSWORD before running the seed in production.',
