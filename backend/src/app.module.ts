@@ -23,6 +23,13 @@ const BOT_TOKEN_PLACEHOLDERS = new Set([
   'xxx',
 ]);
 
+const ROOT_USERNAME_PLACEHOLDERS = new Set([
+  'admin',
+  'root',
+  'administrator',
+  'user',
+]);
+
 const ROOT_PASSWORD_PLACEHOLDERS = new Set([
   'your_root_password_here',
   'change_this_password',
@@ -79,6 +86,13 @@ function validateEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     if (!rootPassword || ROOT_PASSWORD_PLACEHOLDERS.has(rootPassword)) {
       throw new Error(
         'ROOT_PASSWORD is not set or uses a placeholder. Set a strong password before running in production.',
+      );
+    }
+
+    const rootUsername = env.ROOT_USERNAME?.trim();
+    if (!rootUsername || ROOT_USERNAME_PLACEHOLDERS.has(rootUsername.toLowerCase())) {
+      throw new Error(
+        'ROOT_USERNAME is not set or uses a default value ("admin", "root", etc.). Set a custom admin username before running in production.',
       );
     }
   }
